@@ -1,6 +1,6 @@
 [comment]: # ( Copyright Contributors to the Open Cluster Management project )
 
-# Hub-of-Hubs Spec Syncer
+# Hub-of-Hubs Transport Bridge
 Red Hat Advanced Cluster Management Hub-of-Hubs Transport Bridge  
 
 ## How it works
