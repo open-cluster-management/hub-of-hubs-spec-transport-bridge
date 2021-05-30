@@ -15,7 +15,7 @@ make
 
 Set the following environment variables:
 
-* HOH_TRANSPORT_SYNC_INTERVAL - the interval between subsequent periodic sync.  
+* HOH_TRANSPORT_SYNC_INTERVAL - the interval between subsequent periodic syncs from Hub-of-Hubs to leaf hubs.  
     The expected format is `number(units), e.g. 10s
 * SYNC_SERVICE_PROTOCOL
 * SYNC_SERVICE_HOST
