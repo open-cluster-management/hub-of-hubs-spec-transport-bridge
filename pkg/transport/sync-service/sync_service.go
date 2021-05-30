@@ -100,7 +100,7 @@ func (s *SyncService) distributeMessages() {
 				fmt.Printf("Failed to update the object data in the Cloud Sync Service. Error: %s\n", err)
 				os.Exit(1)
 			}
-			log.Printf("Message with id %s has been sent", msg.id)
+			log.Printf("Message from type '%s' with version '%s' has been sent", msg.msgType, msg.version)
 		}
 	}
 }

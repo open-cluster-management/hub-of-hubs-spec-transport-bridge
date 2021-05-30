@@ -74,7 +74,6 @@ func (b *HubOfHubsTransportBridge) periodicSync() {
 			} else {
 				log.Println("policies didn't change, skipping sync...")
 			}
-
 		}
 	}
 }
