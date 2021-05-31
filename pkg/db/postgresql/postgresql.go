@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	databaseUrl = "DATABASE_URL"
+	databaseUrlEnvVar = "DATABASE_URL"
 	policiesTableName = "spec.policies"
 )
 
@@ -23,9 +23,9 @@ type PostgreSql struct {
 }
 
 func NewPostgreSql() *PostgreSql {
-	databaseUrl := os.Getenv(databaseUrl)
+	databaseUrl := os.Getenv(databaseUrlEnvVar)
 	if databaseUrl == "" {
-		log.Fatalf("the expected argument %s is not set in environment variables", databaseUrl)
+		log.Fatalf("the expected argument %s is not set in environment variables", databaseUrlEnvVar)
 	}
 	dbConnectionPool, err := pgxpool.Connect(context.Background(), databaseUrl)
 	if err != nil {
