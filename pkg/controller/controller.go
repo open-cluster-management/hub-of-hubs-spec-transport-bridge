@@ -71,8 +71,6 @@ func (b *HubOfHubsTransportBridge) periodicSync() {
 			// sync policies only if something has changed
 			if lastPolicyUpdate.After(*b.lastPolicyUpdate) {
 				b.syncPolicies()
-			} else {
-				log.Println("policies didn't change, skipping sync...")
 			}
 		}
 	}
