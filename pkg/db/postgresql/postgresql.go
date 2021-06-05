@@ -7,7 +7,7 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	policiesv1 "github.com/open-cluster-management/governance-policy-propagator/pkg/apis/policy/v1"
-	dataTypes "github.com/open-cluster-management/hub-of-hubs-transport-bridge/pkg/data-types"
+	dataTypes "github.com/open-cluster-management/hub-of-hubs-transport-bridge/pkg/bundle"
 	"log"
 	"os"
 	"time"
@@ -31,10 +31,9 @@ func NewPostgreSql() *PostgreSql {
 	if err != nil {
 		log.Fatalf("unable to connect to db: %s", err)
 	}
-	postgreSql := &PostgreSql{
+	return &PostgreSql {
 		conn: dbConnectionPool,
 	}
-	return postgreSql
 }
 
 func (db *PostgreSql) Stop() {

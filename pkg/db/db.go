@@ -1,7 +1,7 @@
 package db
 
 import (
-	dataTypes "github.com/open-cluster-management/hub-of-hubs-transport-bridge/pkg/data-types"
+	dataTypes "github.com/open-cluster-management/hub-of-hubs-transport-bridge/pkg/bundle"
 	"time"
 )
 

@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/json"
+	dataTypes "github.com/open-cluster-management/hub-of-hubs-data-types"
 	"github.com/open-cluster-management/hub-of-hubs-transport-bridge/pkg/db"
 	"github.com/open-cluster-management/hub-of-hubs-transport-bridge/pkg/transport"
 	"log"
@@ -11,7 +12,6 @@ import (
 
 const (
 	policyObjectId = "Policy"
-	PolicyMessageType = "PoliciesBundle"
 	TimeFormat = "2006-01-02_15-04-05"
 )
 
@@ -26,12 +26,11 @@ type HubOfHubsTransportBridge struct {
 }
 
 func NewTransportBridge(db db.HubOfHubsDb, transport transport.Transport, syncInterval time.Duration) *HubOfHubsTransportBridge {
-	transportBridge := &HubOfHubsTransportBridge{
+	return &HubOfHubsTransportBridge {
 		db: db,
 		transport: transport,
 		periodicSyncInterval: syncInterval,
 	}
-	return transportBridge
 }
 
 func (b *HubOfHubsTransportBridge) Start() {
@@ -52,7 +51,7 @@ func (b *HubOfHubsTransportBridge) syncPolicies() {
 		log.Fatalf("unable to do initial sync to leaf hubs - %s", err)
 	}
 	b.lastPolicyUpdate = lastPolicyUpdate
-	b.syncObject(policyObjectId, PolicyMessageType, lastPolicyUpdate, policiesBundle)
+	b.syncObject(policyObjectId, dataTypes.SpecBundle, lastPolicyUpdate, policiesBundle.ToGenericBundle())
 }
 
 func (b *HubOfHubsTransportBridge) periodicSync() {
@@ -84,4 +83,3 @@ func (b *HubOfHubsTransportBridge) syncObject(id string, objType string, timesta
 	}
 	b.transport.Send(id, objType, timestamp.Format(TimeFormat), payloadBytes)
 }
-

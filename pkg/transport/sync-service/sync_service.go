@@ -29,12 +29,11 @@ func NewSyncService() *SyncService {
 	syncServiceClient := client.NewSyncServiceClient(serverProtocol, host, port)
 	syncServiceClient.SetOrgID("myorg")
 	syncServiceClient.SetAppKeyAndSecret("user@myorg", "")
-	syncService := &SyncService{
+	return &SyncService {
 		client:   syncServiceClient,
 		msgChan:  make(chan *syncServiceMessage),
 		stopChan: make(chan struct{}, 1),
 	}
-	return syncService
 }
 
 func readEnvVars() (string, string, uint16) {
@@ -93,7 +92,6 @@ func (s *SyncService) distributeMessages() {
 				fmt.Printf("Failed to update the object in the Cloud Sync Service. Error: %s\n", err)
 				os.Exit(1)
 			}
-
 			reader := bytes.NewReader(msg.payload)
 			err = s.client.UpdateObjectData(&metaData, reader)
 			if err != nil {
