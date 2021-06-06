@@ -11,10 +11,10 @@ import (
 )
 
 const (
-	policyObjectId = "Policy"
-	placementRuleObjectId = "PlacementRule"
-	placementBindingObjectId = "PlacementBinding"
-	TimeFormat = "2006-01-02_15-04-05"
+	policiesObjectId          = "Policies"
+	placementRulesObjectId    = "PlacementRules"
+	placementBindingsObjectId = "PlacementBindings"
+	TimeFormat                = "2006-01-02_15-04-05"
 )
 
 
@@ -57,7 +57,7 @@ func (b *HubOfHubsTransportBridge) syncPolicies() {
 		log.Fatalf("unable to sync policies to leaf hubs - %s", err)
 	}
 	b.lastPolicyUpdate = lastUpdateTimestamp
-	b.syncObject(policyObjectId, dataTypes.SpecBundle, lastUpdateTimestamp, policiesBundle.ToGenericBundle())
+	b.syncObject(policiesObjectId, dataTypes.SpecBundle, lastUpdateTimestamp, policiesBundle.ToGenericBundle())
 }
 
 func (b *HubOfHubsTransportBridge) syncPlacementRules() {
@@ -66,7 +66,7 @@ func (b *HubOfHubsTransportBridge) syncPlacementRules() {
 		log.Fatalf("unable to sync placement rules to leaf hubs - %s", err)
 	}
 	b.lastPlacementRuleUpdate = lastUpdateTimestamp
-	b.syncObject(placementRuleObjectId, dataTypes.SpecBundle, lastUpdateTimestamp, placementRulesBundle.ToGenericBundle())
+	b.syncObject(placementRulesObjectId, dataTypes.SpecBundle, lastUpdateTimestamp, placementRulesBundle.ToGenericBundle())
 }
 
 func (b *HubOfHubsTransportBridge) syncPlacementBindings() {
@@ -75,7 +75,7 @@ func (b *HubOfHubsTransportBridge) syncPlacementBindings() {
 		log.Fatalf("unable to sync placement bindings to leaf hubs - %s", err)
 	}
 	b.lastPlacementBinginUpdate = lastUpdateTimestamp
-	b.syncObject(placementBindingObjectId, dataTypes.SpecBundle, lastUpdateTimestamp, placementBindingsBundle.ToGenericBundle())
+	b.syncObject(placementBindingsObjectId, dataTypes.SpecBundle, lastUpdateTimestamp, placementBindingsBundle.ToGenericBundle())
 }
 
 func (b *HubOfHubsTransportBridge) periodicSync() {
