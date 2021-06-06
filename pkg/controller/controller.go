@@ -12,17 +12,21 @@ import (
 
 const (
 	policyObjectId = "Policy"
+	placementRuleObjectId = "PlacementRule"
+	placementBindingObjectId = "PlacementBinding"
 	TimeFormat = "2006-01-02_15-04-05"
 )
 
 
 type HubOfHubsTransportBridge struct {
-	db 					 	db.HubOfHubsDb
-	transport          	 	transport.Transport
-	lastPolicyUpdate 		*time.Time
-	periodicSyncInterval 	time.Duration
-	stopChan             	chan struct{}
-	stopOnce             	sync.Once
+	db                        db.HubOfHubsDb
+	transport                 transport.Transport
+	lastPolicyUpdate          *time.Time
+	lastPlacementRuleUpdate   *time.Time
+	lastPlacementBinginUpdate *time.Time
+	periodicSyncInterval      time.Duration
+	stopChan                  chan struct{}
+	stopOnce                  sync.Once
 }
 
 func NewTransportBridge(db db.HubOfHubsDb, transport transport.Transport, syncInterval time.Duration) *HubOfHubsTransportBridge {
@@ -35,6 +39,8 @@ func NewTransportBridge(db db.HubOfHubsDb, transport transport.Transport, syncIn
 
 func (b *HubOfHubsTransportBridge) Start() {
 	b.syncPolicies()
+	b.syncPlacementRules()
+	b.syncPlacementBindings()
 	b.periodicSync()
 
 }
@@ -46,12 +52,30 @@ func (b *HubOfHubsTransportBridge) Stop() {
 }
 
 func (b *HubOfHubsTransportBridge) syncPolicies() {
-	policiesBundle, lastPolicyUpdate, err := b.db.GetPoliciesBundle()
+	policiesBundle, lastUpdateTimestamp, err := b.db.GetPoliciesBundle()
 	if err != nil {
-		log.Fatalf("unable to do initial sync to leaf hubs - %s", err)
+		log.Fatalf("unable to sync policies to leaf hubs - %s", err)
 	}
-	b.lastPolicyUpdate = lastPolicyUpdate
-	b.syncObject(policyObjectId, dataTypes.SpecBundle, lastPolicyUpdate, policiesBundle.ToGenericBundle())
+	b.lastPolicyUpdate = lastUpdateTimestamp
+	b.syncObject(policyObjectId, dataTypes.SpecBundle, lastUpdateTimestamp, policiesBundle.ToGenericBundle())
+}
+
+func (b *HubOfHubsTransportBridge) syncPlacementRules() {
+	placementRulesBundle, lastUpdateTimestamp, err := b.db.GetPlacementRulesBundle()
+	if err != nil {
+		log.Fatalf("unable to sync placement rules to leaf hubs - %s", err)
+	}
+	b.lastPlacementRuleUpdate = lastUpdateTimestamp
+	b.syncObject(placementRuleObjectId, dataTypes.SpecBundle, lastUpdateTimestamp, placementRulesBundle.ToGenericBundle())
+}
+
+func (b *HubOfHubsTransportBridge) syncPlacementBindings() {
+	placementBindingsBundle, lastUpdateTimestamp, err := b.db.GetPlacementBindingsBundle()
+	if err != nil {
+		log.Fatalf("unable to sync placement bindings to leaf hubs - %s", err)
+	}
+	b.lastPlacementBinginUpdate = lastUpdateTimestamp
+	b.syncObject(placementBindingObjectId, dataTypes.SpecBundle, lastUpdateTimestamp, placementBindingsBundle.ToGenericBundle())
 }
 
 func (b *HubOfHubsTransportBridge) periodicSync() {
@@ -62,14 +86,17 @@ func (b *HubOfHubsTransportBridge) periodicSync() {
 			ticker.Stop()
 			return
 		case <-ticker.C:
-			lastPolicyUpdate, err := b.db.GetPoliciesLastUpdateTimestamp()
-			if err != nil {
-				log.Printf("error syncing periodically - %s", err)
-				continue
-			}
-			// sync policies only if something has changed
-			if lastPolicyUpdate.After(*b.lastPolicyUpdate) {
+			lastPolicyUpdate, err := b.db.GetLastUpdateTimestamp(db.Policy)
+			if err == nil && lastPolicyUpdate.After(*b.lastPolicyUpdate) { // sync if something changed
 				b.syncPolicies()
+			}
+			lastPlacementRuleUpdate, err := b.db.GetLastUpdateTimestamp(db.PlacementRule)
+			if err == nil && lastPlacementRuleUpdate.After(*b.lastPlacementRuleUpdate) { // sync if something changed
+				b.syncPlacementRules()
+			}
+			lastPlacementBindingUpdate, err := b.db.GetLastUpdateTimestamp(db.PlacementBinding)
+			if err == nil && lastPlacementBindingUpdate.After(*b.lastPlacementBinginUpdate) { // sync if something changed
+				b.syncPlacementBindings()
 			}
 		}
 	}
