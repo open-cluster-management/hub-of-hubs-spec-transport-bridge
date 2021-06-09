@@ -21,10 +21,10 @@ const (
 )
 
 type HubOfHubsTransportBridge struct {
-	periodicSyncInterval       time.Duration
-	dbToTransportSyncers		[]*genericDbToTransport
-	stopChan                   chan struct{}
-	stopOnce                   sync.Once
+	periodicSyncInterval time.Duration
+	dbToTransportSyncers []*genericDbToTransport
+	stopChan             chan struct{}
+	stopOnce             sync.Once
 }
 
 func NewTransportBridge(db db.HubOfHubsDb, transport transport.Transport, syncInterval time.Duration) *HubOfHubsTransportBridge {

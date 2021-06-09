@@ -40,7 +40,7 @@ func (g *genericDbToTransport) Init() {
 	g.SyncBundle()
 }
 
-func (g * genericDbToTransport) initLastUpdateTimestampFromTransport() *time.Time {
+func (g *genericDbToTransport) initLastUpdateTimestampFromTransport() *time.Time {
 	version := g.transport.GetVersion(g.transportBundleKey, dataTypes.SpecBundle)
 	if version == "" {
 		return nil
@@ -52,7 +52,7 @@ func (g * genericDbToTransport) initLastUpdateTimestampFromTransport() *time.Tim
 	return &timestamp
 }
 
-func (g * genericDbToTransport) SyncBundle() {
+func (g *genericDbToTransport) SyncBundle() {
 	lastUpdateTimestamp, err := g.db.GetLastUpdateTimestamp(g.dbTableName)
 	if err != nil {
 		log.Println(fmt.Sprintf("unable to sync %s bundle to leaf hubs - %s", g.dbTableName, err))

@@ -17,11 +17,11 @@ const (
 )
 
 type SyncService struct {
-	client		*client.SyncServiceClient
-	msgChan		chan *syncServiceMessage
-	stopChan	chan struct{}
-	startOnce   sync.Once
-	stopOnce    sync.Once
+	client    *client.SyncServiceClient
+	msgChan   chan *syncServiceMessage
+	stopChan  chan struct{}
+	startOnce sync.Once
+	stopOnce  sync.Once
 }
 
 func NewSyncService() *SyncService {
@@ -68,7 +68,7 @@ func (s *SyncService) Stop() {
 
 func (s *SyncService) Send(id string, msgType string, version string, payload []byte) {
 	message := &syncServiceMessage{
-		id: id,
+		id:      id,
 		msgType: msgType,
 		version: version,
 		payload: payload,
@@ -99,13 +99,13 @@ func (s *SyncService) distributeMessages() {
 			err := s.client.UpdateObject(&metaData)
 			if err != nil {
 				fmt.Printf("Failed to update the object in the Cloud Sync Service. Error: %s\n", err)
-				os.Exit(1)
+				continue
 			}
 			reader := bytes.NewReader(msg.payload)
 			err = s.client.UpdateObjectData(&metaData, reader)
 			if err != nil {
 				fmt.Printf("Failed to update the object data in the Cloud Sync Service. Error: %s\n", err)
-				os.Exit(1)
+				continue
 			}
 			log.Printf("Message '%s' from type '%s' with version '%s' sent", msg.id, msg.msgType, msg.version)
 		}
