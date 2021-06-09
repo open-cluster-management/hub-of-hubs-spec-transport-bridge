@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	TimeFormat = "2006-01-02_15-04-05"
+	TimeFormat = "2006-01-02_15-04-05.000000"
 )
 
 type genericDbToTransport struct {
