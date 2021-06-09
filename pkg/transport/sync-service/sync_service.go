@@ -76,6 +76,15 @@ func (s *SyncService) Send(id string, msgType string, version string, payload []
 	s.msgChan <- message
 }
 
+// if the object doesn't exist or an error occurred returns an empty string
+func (s *SyncService) GetVersion(id string, msgType string) string {
+	objectMetadata, err := s.client.GetObjectMetadata(msgType, id)
+	if err != nil {
+		return ""
+	}
+	return objectMetadata.Version
+}
+
 func (s *SyncService) distributeMessages() {
 	for {
 		select {

@@ -1,81 +1,75 @@
 package controller
 
 import (
-	"encoding/json"
-	dataTypes "github.com/open-cluster-management/hub-of-hubs-data-types"
+	appsv1 "github.com/open-cluster-management/governance-policy-propagator/pkg/apis/apps/v1"
+	policiesv1 "github.com/open-cluster-management/governance-policy-propagator/pkg/apis/policy/v1"
+	"github.com/open-cluster-management/hub-of-hubs-transport-bridge/pkg/bundle"
 	"github.com/open-cluster-management/hub-of-hubs-transport-bridge/pkg/db"
 	"github.com/open-cluster-management/hub-of-hubs-transport-bridge/pkg/transport"
-	"log"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sync"
 	"time"
 )
 
 const (
-	policiesObjectId          = "Policies"
-	placementRulesObjectId    = "PlacementRules"
-	placementBindingsObjectId = "PlacementBindings"
-	TimeFormat                = "2006-01-02_15-04-05"
+	policiesMsgKey             string = "Policies"
+	placementRulesMsgKey       string = "PlacementRules"
+	placementBindingsMsgKey    string = "PlacementBindings"
+	policiesTableName          string = "policies"
+	placementRulesTableName    string = "placementrules"
+	placementBindingsTableName string = "placementbindings"
 )
 
-
 type HubOfHubsTransportBridge struct {
-	db                        db.HubOfHubsDb
-	transport                 transport.Transport
-	lastPolicyUpdate          *time.Time
-	lastPlacementRuleUpdate   *time.Time
-	lastPlacementBinginUpdate *time.Time
-	periodicSyncInterval      time.Duration
-	stopChan                  chan struct{}
-	stopOnce                  sync.Once
+	periodicSyncInterval       time.Duration
+	dbToTransportSyncers		[]*genericDbToTransport
+	stopChan                   chan struct{}
+	stopOnce                   sync.Once
 }
 
 func NewTransportBridge(db db.HubOfHubsDb, transport transport.Transport, syncInterval time.Duration) *HubOfHubsTransportBridge {
-	return &HubOfHubsTransportBridge {
-		db: db,
-		transport: transport,
+	return &HubOfHubsTransportBridge{
 		periodicSyncInterval: syncInterval,
+		dbToTransportSyncers: []*genericDbToTransport {
+			{ // syncer for policy
+				db:                 db,
+				transport:          transport,
+				dbTableName:        policiesTableName,
+				transportBundleKey: policiesMsgKey,
+				createObjFunc:      func() metav1.Object { return &policiesv1.Policy{} },
+				createBundleFunc:   bundle.NewBaseBundle,
+			},
+			{ // syncer for placement rule
+				db:                 db,
+				transport:          transport,
+				dbTableName:        placementRulesTableName,
+				transportBundleKey: placementRulesMsgKey,
+				createObjFunc:      func() metav1.Object { return &appsv1.PlacementRule{} },
+				createBundleFunc:   bundle.NewBaseBundle,
+			},
+			{ // syncer for placement binding
+				db:                 db,
+				transport:          transport,
+				dbTableName:        placementBindingsTableName,
+				transportBundleKey: placementBindingsMsgKey,
+				createObjFunc:      func() metav1.Object { return &policiesv1.PlacementBinding{} },
+				createBundleFunc:   bundle.NewPlacementBindingBundle,
+			},
+		},
 	}
 }
 
 func (b *HubOfHubsTransportBridge) Start() {
-	b.syncPolicies()
-	b.syncPlacementRules()
-	b.syncPlacementBindings()
+	for _, syncer := range b.dbToTransportSyncers {
+		syncer.Init()
+	}
 	b.periodicSync()
-
 }
 
 func (b *HubOfHubsTransportBridge) Stop() {
 	b.stopOnce.Do(func() {
 		close(b.stopChan)
 	})
-}
-
-func (b *HubOfHubsTransportBridge) syncPolicies() {
-	policiesBundle, lastUpdateTimestamp, err := b.db.GetPoliciesBundle()
-	if err != nil {
-		log.Fatalf("unable to sync policies to leaf hubs - %s", err)
-	}
-	b.lastPolicyUpdate = lastUpdateTimestamp
-	b.syncObject(policiesObjectId, dataTypes.SpecBundle, lastUpdateTimestamp, policiesBundle.ToGenericBundle())
-}
-
-func (b *HubOfHubsTransportBridge) syncPlacementRules() {
-	placementRulesBundle, lastUpdateTimestamp, err := b.db.GetPlacementRulesBundle()
-	if err != nil {
-		log.Fatalf("unable to sync placement rules to leaf hubs - %s", err)
-	}
-	b.lastPlacementRuleUpdate = lastUpdateTimestamp
-	b.syncObject(placementRulesObjectId, dataTypes.SpecBundle, lastUpdateTimestamp, placementRulesBundle.ToGenericBundle())
-}
-
-func (b *HubOfHubsTransportBridge) syncPlacementBindings() {
-	placementBindingsBundle, lastUpdateTimestamp, err := b.db.GetPlacementBindingsBundle()
-	if err != nil {
-		log.Fatalf("unable to sync placement bindings to leaf hubs - %s", err)
-	}
-	b.lastPlacementBinginUpdate = lastUpdateTimestamp
-	b.syncObject(placementBindingsObjectId, dataTypes.SpecBundle, lastUpdateTimestamp, placementBindingsBundle.ToGenericBundle())
 }
 
 func (b *HubOfHubsTransportBridge) periodicSync() {
@@ -86,27 +80,9 @@ func (b *HubOfHubsTransportBridge) periodicSync() {
 			ticker.Stop()
 			return
 		case <-ticker.C:
-			lastPolicyUpdate, err := b.db.GetLastUpdateTimestamp(db.Policy)
-			if err == nil && lastPolicyUpdate.After(*b.lastPolicyUpdate) { // sync if something changed
-				b.syncPolicies()
-			}
-			lastPlacementRuleUpdate, err := b.db.GetLastUpdateTimestamp(db.PlacementRule)
-			if err == nil && lastPlacementRuleUpdate.After(*b.lastPlacementRuleUpdate) { // sync if something changed
-				b.syncPlacementRules()
-			}
-			lastPlacementBindingUpdate, err := b.db.GetLastUpdateTimestamp(db.PlacementBinding)
-			if err == nil && lastPlacementBindingUpdate.After(*b.lastPlacementBinginUpdate) { // sync if something changed
-				b.syncPlacementBindings()
+			for _, syncer := range b.dbToTransportSyncers {
+				syncer.SyncBundle()
 			}
 		}
 	}
-}
-
-func (b *HubOfHubsTransportBridge) syncObject(id string, objType string, timestamp *time.Time, payload interface{}) {
-	payloadBytes, err := json.Marshal(payload)
-	if err != nil {
-		log.Printf("failed to sync object from type %s with id %s- %s", objType, id, err)
-		return
-	}
-	b.transport.Send(id, objType, timestamp.Format(TimeFormat), payloadBytes)
 }
