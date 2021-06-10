@@ -66,7 +66,7 @@ func (s *SyncService) Stop() {
 	close(s.stopChan)
 }
 
-func (s *SyncService) Send(id string, msgType string, version string, payload []byte) {
+func (s *SyncService) SendAsync(id string, msgType string, version string, payload []byte) {
 	message := &syncServiceMessage{
 		id:      id,
 		msgType: msgType,

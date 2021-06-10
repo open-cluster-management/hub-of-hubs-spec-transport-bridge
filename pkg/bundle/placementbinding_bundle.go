@@ -7,7 +7,7 @@ import (
 )
 
 func NewPlacementBindingBundle() Bundle {
-	return &BaseBundle {
+	return &baseBundle{
 		Objects:              make([]metav1.Object, 0),
 		DeletedObjects:       make([]metav1.Object, 0),
 		manipulateCustomFunc: manipulateCustom,

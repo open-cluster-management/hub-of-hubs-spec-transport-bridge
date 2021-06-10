@@ -22,7 +22,7 @@ const (
 
 type HubOfHubsTransportBridge struct {
 	periodicSyncInterval time.Duration
-	dbToTransportSyncers []*genericDbToTransport
+	dbToTransportSyncers []*genericDbToTransportSyncer
 	stopChan             chan struct{}
 	stopOnce             sync.Once
 }
@@ -30,7 +30,7 @@ type HubOfHubsTransportBridge struct {
 func NewTransportBridge(db db.HubOfHubsDb, transport transport.Transport, syncInterval time.Duration) *HubOfHubsTransportBridge {
 	return &HubOfHubsTransportBridge{
 		periodicSyncInterval: syncInterval,
-		dbToTransportSyncers: []*genericDbToTransport {
+		dbToTransportSyncers: []*genericDbToTransportSyncer{
 			{ // syncer for policy
 				db:                 db,
 				transport:          transport,
