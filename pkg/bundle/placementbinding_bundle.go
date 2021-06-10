@@ -3,18 +3,17 @@ package bundle
 import (
 	"fmt"
 	policiesv1 "github.com/open-cluster-management/governance-policy-propagator/pkg/apis/policy/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"github.com/open-cluster-management/hub-of-hubs-data-types"
 )
 
-func NewPlacementBindingBundle() Bundle {
+func NewPlacementBindingBundle() datatypes.Bundle {
 	return &baseBundle{
-		Objects:              make([]metav1.Object, 0),
-		DeletedObjects:       make([]metav1.Object, 0),
+		ObjectsBundle: datatypes.NewObjectBundle(),
 		manipulateCustomFunc: manipulateCustom,
 	}
 }
 
-func manipulateCustom(object metav1.Object) {
+func manipulateCustom(object datatypes.Object) {
 	placementBinding := object.(*policiesv1.PlacementBinding)
 	namespace := placementBinding.GetNamespace()
 	placementBinding.PlacementRef.Name = fmt.Sprintf("%s-hoh-%s", placementBinding.PlacementRef.Name, namespace)

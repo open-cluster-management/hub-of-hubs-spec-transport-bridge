@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
+	datatypes "github.com/open-cluster-management/hub-of-hubs-data-types"
 	"github.com/open-cluster-management/hub-of-hubs-transport-bridge/pkg/bundle"
 	"log"
 	"os"
@@ -38,7 +39,7 @@ func (p *PostgreSql) Stop() {
 	p.conn.Close()
 }
 
-func (p *PostgreSql) GetBundle(tableName string, createObjFunc bundle.CreateObjectFunction, intoBundle bundle.Bundle) (*time.Time, error) {
+func (p *PostgreSql) GetBundle(tableName string, createObjFunc bundle.CreateObjectFunction, intoBundle datatypes.Bundle) (*time.Time, error) {
 	timestamp, err := p.GetLastUpdateTimestamp(tableName)
 	if err != nil {
 		return nil, err

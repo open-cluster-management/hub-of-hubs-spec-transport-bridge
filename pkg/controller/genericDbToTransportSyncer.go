@@ -36,7 +36,7 @@ func (g *genericDbToTransportSyncer) Init() {
 	} else {
 		g.lastUpdateTimestamp = &time.Time{}
 	}
-	log.Println(fmt.Sprintf("initialzed syncer for table %s", g.dbTableName))
+	log.Println(fmt.Sprintf("initialzed syncer for table spec.%s", g.dbTableName))
 	g.SyncBundle()
 }
 
@@ -70,11 +70,11 @@ func (g *genericDbToTransportSyncer) SyncBundle() {
 		return
 	}
 	g.lastUpdateTimestamp = lastUpdateTimestamp
-	g.syncToTransport(g.transportBundleKey, dataTypes.SpecBundle, lastUpdateTimestamp, bundleResult.ToGenericBundle())
+	g.syncToTransport(g.transportBundleKey, dataTypes.SpecBundle, lastUpdateTimestamp, bundleResult)
 }
 
 
-func (g *genericDbToTransportSyncer) syncToTransport(id string, objType string, timestamp *time.Time, payload *dataTypes.ObjectsBundle) {
+func (g *genericDbToTransportSyncer) syncToTransport(id string, objType string, timestamp *time.Time, payload dataTypes.Bundle) {
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
 		log.Printf("failed to sync object from type %s with id %s- %s", objType, id, err)
