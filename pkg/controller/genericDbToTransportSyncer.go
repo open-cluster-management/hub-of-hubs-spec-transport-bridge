@@ -3,7 +3,7 @@ package controller
 import (
 	"encoding/json"
 	"fmt"
-	dataTypes "github.com/open-cluster-management/hub-of-hubs-data-types"
+	"github.com/open-cluster-management/hub-of-hubs-data-types"
 	"github.com/open-cluster-management/hub-of-hubs-transport-bridge/pkg/bundle"
 	hohDb "github.com/open-cluster-management/hub-of-hubs-transport-bridge/pkg/db"
 	"github.com/open-cluster-management/hub-of-hubs-transport-bridge/pkg/transport"
@@ -41,7 +41,7 @@ func (g *genericDbToTransportSyncer) Init() {
 }
 
 func (g *genericDbToTransportSyncer) initLastUpdateTimestampFromTransport() *time.Time {
-	version := g.transport.GetVersion(g.transportBundleKey, dataTypes.SpecBundle)
+	version := g.transport.GetVersion(g.transportBundleKey, datatypes.SpecBundle)
 	if version == "" {
 		return nil
 	}
@@ -70,11 +70,11 @@ func (g *genericDbToTransportSyncer) SyncBundle() {
 		return
 	}
 	g.lastUpdateTimestamp = lastUpdateTimestamp
-	g.syncToTransport(g.transportBundleKey, dataTypes.SpecBundle, lastUpdateTimestamp, bundleResult)
+	g.syncToTransport(g.transportBundleKey, datatypes.SpecBundle, lastUpdateTimestamp, bundleResult.ToGenericBundle())
 }
 
 
-func (g *genericDbToTransportSyncer) syncToTransport(id string, objType string, timestamp *time.Time, payload dataTypes.Bundle) {
+func (g *genericDbToTransportSyncer) syncToTransport(id string, objType string, timestamp *time.Time, payload *datatypes.ObjectsBundle) {
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
 		log.Printf("failed to sync object from type %s with id %s- %s", objType, id, err)
