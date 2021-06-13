@@ -34,5 +34,4 @@ func main() {
 	transportBridgeController := controller.NewTransportBridge(postgreSql, syncServiceObj, interval)
 	transportBridgeController.Start()
 	defer transportBridgeController.Stop()
-
 }

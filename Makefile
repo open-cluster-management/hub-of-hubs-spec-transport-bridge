@@ -9,7 +9,7 @@
 #   - clean - cleans the build area (all executables under build/bin)
 #   - clean-all - superset of 'clean' that also removes vendor dir
 
-.PHONY: all				##downloads vendor libs, and build executable
+.PHONY: all				##formats the code, downloads vendor libs, and build executable
 all: fmt vendor hoh-transport-bridge
 
 .PHONY: fmt				##formats the code
