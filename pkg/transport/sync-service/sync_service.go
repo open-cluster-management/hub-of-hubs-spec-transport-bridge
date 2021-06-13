@@ -63,7 +63,9 @@ func (s *SyncService) Start() {
 }
 
 func (s *SyncService) Stop() {
-	close(s.stopChan)
+	s.stopOnce.Do(func() {
+		close(s.stopChan)
+	})
 }
 
 func (s *SyncService) SendAsync(id string, msgType string, version string, payload []byte) {
