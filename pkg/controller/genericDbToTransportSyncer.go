@@ -70,11 +70,11 @@ func (g *genericDbToTransportSyncer) SyncBundle() {
 		return
 	}
 	g.lastUpdateTimestamp = lastUpdateTimestamp
-	g.syncToTransport(g.transportBundleKey, datatypes.SpecBundle, lastUpdateTimestamp, bundleResult.ToGenericBundle())
+	g.syncToTransport(g.transportBundleKey, datatypes.SpecBundle, lastUpdateTimestamp, bundleResult)
 }
 
 
-func (g *genericDbToTransportSyncer) syncToTransport(id string, objType string, timestamp *time.Time, payload *datatypes.ObjectsBundle) {
+func (g *genericDbToTransportSyncer) syncToTransport(id string, objType string, timestamp *time.Time, payload bundle.Bundle) {
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
 		log.Printf("failed to sync object from type %s with id %s- %s", objType, id, err)

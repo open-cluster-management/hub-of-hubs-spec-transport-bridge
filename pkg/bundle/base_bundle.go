@@ -2,7 +2,6 @@ package bundle
 
 import (
 	"fmt"
-	"github.com/open-cluster-management/hub-of-hubs-data-types"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -42,15 +41,4 @@ func (b *baseBundle) manipulate(object metav1.Object) metav1.Object {
 func (b *baseBundle) manipulateNameAndNamespace(object metav1.Object) {
 	object.SetName(fmt.Sprintf("%s-hoh-%s", object.GetName(), object.GetNamespace()))
 	object.SetNamespace(hohSystemNamespace)
-}
-
-func (b *baseBundle) ToGenericBundle() *datatypes.ObjectsBundle {
-	genericBundle := datatypes.NewObjectBundle()
-	for _, object := range b.Objects {
-		genericBundle.AddObject(object)
-	}
-	for _, object := range b.DeletedObjects {
-		genericBundle.AddDeletedObject(object)
-	}
-	return genericBundle
 }
