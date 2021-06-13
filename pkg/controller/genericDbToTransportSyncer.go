@@ -73,7 +73,6 @@ func (g *genericDbToTransportSyncer) SyncBundle() {
 	g.syncToTransport(g.transportBundleKey, datatypes.SpecBundle, lastUpdateTimestamp, bundleResult)
 }
 
-
 func (g *genericDbToTransportSyncer) syncToTransport(id string, objType string, timestamp *time.Time, payload bundle.Bundle) {
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {

@@ -29,7 +29,7 @@ func NewPostgreSql() *PostgreSql {
 	if err != nil {
 		log.Fatalf("unable to connect to db: %s", err)
 	}
-	return &PostgreSql {
+	return &PostgreSql{
 		conn: dbConnectionPool,
 	}
 }

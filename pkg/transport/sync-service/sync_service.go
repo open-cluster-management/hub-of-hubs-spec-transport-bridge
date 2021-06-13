@@ -12,8 +12,8 @@ import (
 
 const (
 	syncServiceProtocol = "SYNC_SERVICE_PROTOCOL"
-	syncServiceHost = "SYNC_SERVICE_HOST"
-	syncServicePort = "SYNC_SERVICE_PORT"
+	syncServiceHost     = "SYNC_SERVICE_HOST"
+	syncServicePort     = "SYNC_SERVICE_PORT"
 )
 
 type SyncService struct {
@@ -29,7 +29,7 @@ func NewSyncService() *SyncService {
 	syncServiceClient := client.NewSyncServiceClient(serverProtocol, host, port)
 	syncServiceClient.SetOrgID("myorg")
 	syncServiceClient.SetAppKeyAndSecret("user@myorg", "")
-	return &SyncService {
+	return &SyncService{
 		client:   syncServiceClient,
 		msgChan:  make(chan *syncServiceMessage),
 		stopChan: make(chan struct{}, 1),
@@ -91,10 +91,10 @@ func (s *SyncService) distributeMessages() {
 		case <-s.stopChan:
 			return
 		case msg := <-s.msgChan:
-			metaData := client.ObjectMetaData {
-				ObjectID: msg.id,
+			metaData := client.ObjectMetaData{
+				ObjectID:   msg.id,
 				ObjectType: msg.msgType,
-				Version: msg.version,
+				Version:    msg.version,
 			}
 			err := s.client.UpdateObject(&metaData)
 			if err != nil {

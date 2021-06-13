@@ -11,7 +11,7 @@ func NewBaseBundle() Bundle {
 	return &baseBundle{
 		Objects:              make([]metav1.Object, 0),
 		DeletedObjects:       make([]metav1.Object, 0),
-		manipulateCustomFunc: func(object metav1.Object) { },
+		manipulateCustomFunc: func(object metav1.Object) {},
 	}
 }
 
