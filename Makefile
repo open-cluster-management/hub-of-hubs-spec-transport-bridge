@@ -2,6 +2,7 @@
 # This makefile defines the following targets
 #
 #   - all (default) - downloads vendor libs, and build executable
+#   - fmt - formats the code
 #   - vendor - download all third party libraries and puts them inside vendor directory
 #   - clean-vendor - removes third party libraries from vendor directory
 #   - hoh-transport-bridge - builds hub-of-hubs-transport-bridge as an executable and puts it under build/bin
@@ -9,7 +10,11 @@
 #   - clean-all - superset of 'clean' that also removes vendor dir
 
 .PHONY: all				##downloads vendor libs, and build executable
-all: vendor hoh-transport-bridge
+all: fmt vendor hoh-transport-bridge
+
+.PHONY: fmt				##formats the code
+fmt:
+	@go fmt ./...
 
 .PHONY: vendor			##download all third party libraries and puts them inside vendor directory
 vendor:
