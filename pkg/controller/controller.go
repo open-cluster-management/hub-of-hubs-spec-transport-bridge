@@ -12,12 +12,12 @@ import (
 )
 
 const (
-	policiesMsgKey             string = "Policies"
-	placementRulesMsgKey       string = "PlacementRules"
-	placementBindingsMsgKey    string = "PlacementBindings"
-	policiesTableName          string = "policies"
-	placementRulesTableName    string = "placementrules"
-	placementBindingsTableName string = "placementbindings"
+	policiesMsgKey             = "Policies"
+	placementRulesMsgKey       = "PlacementRules"
+	placementBindingsMsgKey    = "PlacementBindings"
+	policiesTableName          = "policies"
+	placementRulesTableName    = "placementrules"
+	placementBindingsTableName = "placementbindings"
 )
 
 type HubOfHubsTransportBridge struct {
