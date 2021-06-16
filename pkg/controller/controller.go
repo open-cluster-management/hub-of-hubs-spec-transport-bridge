@@ -24,6 +24,7 @@ type HubOfHubsTransportBridge struct {
 	periodicSyncInterval time.Duration
 	dbToTransportSyncers []*genericDbToTransportSyncer
 	stopChan             chan struct{}
+	startOnce            sync.Once
 	stopOnce             sync.Once
 }
 
@@ -60,10 +61,12 @@ func NewTransportBridge(db db.HubOfHubsDb, transport transport.Transport, syncIn
 }
 
 func (b *HubOfHubsTransportBridge) Start() {
-	for _, syncer := range b.dbToTransportSyncers {
-		syncer.Init()
-	}
-	b.periodicSync()
+	b.startOnce.Do(func() {
+		for _, syncer := range b.dbToTransportSyncers {
+			syncer.Init()
+		}
+		b.periodicSync()
+	})
 }
 
 func (b *HubOfHubsTransportBridge) Stop() {
