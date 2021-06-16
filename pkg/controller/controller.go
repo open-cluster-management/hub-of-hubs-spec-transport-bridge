@@ -22,16 +22,17 @@ const (
 
 type HubOfHubsTransportBridge struct {
 	periodicSyncInterval time.Duration
-	dbToTransportSyncers []*genericDbToTransportSyncer
+	dbToTransportSyncers []*genericDBToTransportSyncer
 	stopChan             chan struct{}
 	startOnce            sync.Once
 	stopOnce             sync.Once
 }
 
-func NewTransportBridge(db db.HubOfHubsDb, transport transport.Transport, syncInterval time.Duration) *HubOfHubsTransportBridge {
+func NewTransportBridge(db db.HubOfHubsDB, transport transport.Transport,
+	syncInterval time.Duration) *HubOfHubsTransportBridge {
 	return &HubOfHubsTransportBridge{
 		periodicSyncInterval: syncInterval,
-		dbToTransportSyncers: []*genericDbToTransportSyncer{
+		dbToTransportSyncers: []*genericDBToTransportSyncer{
 			{ // syncer for policy
 				db:                 db,
 				transport:          transport,

@@ -15,8 +15,8 @@ const (
 	TimeFormat = "2006-01-02_15-04-05.000000"
 )
 
-type genericDbToTransportSyncer struct {
-	db                  hohDb.HubOfHubsDb
+type genericDBToTransportSyncer struct {
+	db                  hohDb.HubOfHubsDB
 	transport           transport.Transport
 	dbTableName         string
 	transportBundleKey  string
@@ -25,7 +25,7 @@ type genericDbToTransportSyncer struct {
 	createBundleFunc    bundle.CreateBundleFunction
 }
 
-func (g *genericDbToTransportSyncer) Init() {
+func (g *genericDBToTransportSyncer) Init() {
 	// on initialization, we initialize the lastUpdateTimestamp from the transport layer, as this is the last timestamp
 	// that transport bridge sent an update.
 	// later, in SyncBundle, it will check the db if there are newer updates and if yes it will send it with
@@ -40,7 +40,7 @@ func (g *genericDbToTransportSyncer) Init() {
 	g.SyncBundle()
 }
 
-func (g *genericDbToTransportSyncer) initLastUpdateTimestampFromTransport() *time.Time {
+func (g *genericDBToTransportSyncer) initLastUpdateTimestampFromTransport() *time.Time {
 	version := g.transport.GetVersion(g.transportBundleKey, datatypes.SpecBundle)
 	if version == "" {
 		return nil
@@ -52,7 +52,7 @@ func (g *genericDbToTransportSyncer) initLastUpdateTimestampFromTransport() *tim
 	return &timestamp
 }
 
-func (g *genericDbToTransportSyncer) SyncBundle() {
+func (g *genericDBToTransportSyncer) SyncBundle() {
 	lastUpdateTimestamp, err := g.db.GetLastUpdateTimestamp(g.dbTableName)
 	if err != nil {
 		log.Println(fmt.Sprintf("unable to sync %s bundle to leaf hubs - %s", g.dbTableName, err))
@@ -73,7 +73,8 @@ func (g *genericDbToTransportSyncer) SyncBundle() {
 	g.syncToTransport(g.transportBundleKey, datatypes.SpecBundle, lastUpdateTimestamp, bundleResult)
 }
 
-func (g *genericDbToTransportSyncer) syncToTransport(id string, objType string, timestamp *time.Time, payload bundle.Bundle) {
+func (g *genericDBToTransportSyncer) syncToTransport(id string, objType string, timestamp *time.Time,
+	payload bundle.Bundle) {
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
 		log.Printf("failed to sync object from type %s with id %s- %s", objType, id, err)

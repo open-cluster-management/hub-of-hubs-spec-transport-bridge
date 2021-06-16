@@ -2,7 +2,6 @@ package sync_service
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/open-horizon/edge-sync-service-client/client"
 	"log"
 	"os"
@@ -78,7 +77,7 @@ func (s *SyncService) SendAsync(id string, msgType string, version string, paylo
 	s.msgChan <- message
 }
 
-// if the object doesn't exist or an error occurred returns an empty string
+// if the object doesn't exist or an error occurred returns an empty string.
 func (s *SyncService) GetVersion(id string, msgType string) string {
 	objectMetadata, err := s.client.GetObjectMetadata(msgType, id)
 	if err != nil {
@@ -100,13 +99,13 @@ func (s *SyncService) distributeMessages() {
 			}
 			err := s.client.UpdateObject(&metaData)
 			if err != nil {
-				fmt.Printf("Failed to update the object in the Cloud Sync Service. Error: %s\n", err)
+				log.Printf("Failed to update the object in the Cloud Sync Service. Error: %s\n", err)
 				continue
 			}
 			reader := bytes.NewReader(msg.payload)
 			err = s.client.UpdateObjectData(&metaData, reader)
 			if err != nil {
-				fmt.Printf("Failed to update the object data in the Cloud Sync Service. Error: %s\n", err)
+				log.Printf("Failed to update the object data in the Cloud Sync Service. Error: %s\n", err)
 				continue
 			}
 			log.Printf("Message '%s' from type '%s' with version '%s' sent", msg.id, msg.msgType, msg.version)

@@ -15,8 +15,8 @@ const (
 
 func main() {
 	// db layer initialization
-	postgreSql := postgresql.NewPostgreSql()
-	defer postgreSql.Stop()
+	postgreSQL := postgresql.NewPostgreSQL()
+	defer postgreSQL.Stop()
 
 	// transport layer initialization
 	syncServiceObj := hohSyncService.NewSyncService()
@@ -31,7 +31,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("the expected var %s is not valid duration", hohTransportSyncInterval)
 	}
-	transportBridgeController := controller.NewTransportBridge(postgreSql, syncServiceObj, interval)
+	transportBridgeController := controller.NewTransportBridge(postgreSQL, syncServiceObj, interval)
 	transportBridgeController.Start()
 	defer transportBridgeController.Stop()
 }

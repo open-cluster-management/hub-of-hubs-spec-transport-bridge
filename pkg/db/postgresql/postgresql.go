@@ -2,6 +2,7 @@ package postgresql
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -12,32 +13,33 @@ import (
 )
 
 const (
-	databaseUrlEnvVar = "DATABASE_URL"
+	databaseURLEnvVar = "DATABASE_URL"
 )
 
-type PostgreSql struct {
+type PostgreSQL struct {
 	conn *pgxpool.Pool
 }
 
-func NewPostgreSql() *PostgreSql {
-	databaseUrl := os.Getenv(databaseUrlEnvVar)
-	if databaseUrl == "" {
-		log.Fatalf("the expected argument %s is not set in environment variables", databaseUrlEnvVar)
+func NewPostgreSQL() *PostgreSQL {
+	databaseURL := os.Getenv(databaseURLEnvVar)
+	if databaseURL == "" {
+		log.Fatalf("the expected argument %s is not set in environment variables", databaseURLEnvVar)
 	}
-	dbConnectionPool, err := pgxpool.Connect(context.Background(), databaseUrl)
+	dbConnectionPool, err := pgxpool.Connect(context.Background(), databaseURL)
 	if err != nil {
 		log.Fatalf("unable to connect to db: %s", err)
 	}
-	return &PostgreSql{
+	return &PostgreSQL{
 		conn: dbConnectionPool,
 	}
 }
 
-func (p *PostgreSql) Stop() {
+func (p *PostgreSQL) Stop() {
 	p.conn.Close()
 }
 
-func (p *PostgreSql) GetBundle(tableName string, createObjFunc bundle.CreateObjectFunction, intoBundle bundle.Bundle) (*time.Time, error) {
+func (p *PostgreSQL) GetBundle(tableName string, createObjFunc bundle.CreateObjectFunction,
+	intoBundle bundle.Bundle) (*time.Time, error) {
 	timestamp, err := p.GetLastUpdateTimestamp(tableName)
 	if err != nil {
 		return nil, err
@@ -62,12 +64,12 @@ func (p *PostgreSql) GetBundle(tableName string, createObjFunc bundle.CreateObje
 	return timestamp, nil
 }
 
-func (p *PostgreSql) GetLastUpdateTimestamp(tableName string) (*time.Time, error) {
+func (p *PostgreSQL) GetLastUpdateTimestamp(tableName string) (*time.Time, error) {
 	var lastTimestamp time.Time
 	err := p.conn.QueryRow(context.Background(),
 		fmt.Sprintf(`SELECT MAX(updated_at) FROM spec.%s`, tableName)).Scan(&lastTimestamp)
 
-	if err == pgx.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, fmt.Errorf("no objects in the table spec.%s", tableName)
 	}
 	return &lastTimestamp, nil

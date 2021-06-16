@@ -37,7 +37,7 @@ func (b *baseBundle) manipulate(object metav1.Object) metav1.Object {
 	return object
 }
 
-// manipulate name and namespace to avoid collisions of resources with same name on different ns
+// manipulate name and namespace to avoid collisions of resources with same name on different ns.
 func (b *baseBundle) manipulateNameAndNamespace(object metav1.Object) {
 	object.SetName(fmt.Sprintf("%s-hoh-%s", object.GetName(), object.GetNamespace()))
 	object.SetNamespace(hohSystemNamespace)
