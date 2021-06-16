@@ -2,7 +2,6 @@ package postgresql
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -69,7 +68,7 @@ func (p *PostgreSql) GetLastUpdateTimestamp(tableName string) (*time.Time, error
 		fmt.Sprintf(`SELECT MAX(updated_at) FROM spec.%s`, tableName)).Scan(&lastTimestamp)
 
 	if err == pgx.ErrNoRows {
-		return nil, errors.New(fmt.Sprintf("no objects in the table spec.%s", tableName))
+		return nil, fmt.Errorf("no objects in the table spec.%s", tableName)
 	}
 	return &lastTimestamp, nil
 }
