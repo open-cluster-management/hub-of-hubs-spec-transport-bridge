@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-type HubOfHubsDB interface {
+type HubOfHubsSpecDB interface {
 	GetBundle(tableName string, createObjFunc bundle.CreateObjectFunction, intoBundle bundle.Bundle) (*time.Time, error)
 	GetLastUpdateTimestamp(tableName string) (*time.Time, error)
 }

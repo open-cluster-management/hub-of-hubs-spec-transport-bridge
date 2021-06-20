@@ -16,7 +16,7 @@ const (
 )
 
 type genericDBToTransportSyncer struct {
-	db                  hohDb.HubOfHubsDB
+	db                  hohDb.HubOfHubsSpecDB
 	transport           transport.Transport
 	dbTableName         string
 	transportBundleKey  string

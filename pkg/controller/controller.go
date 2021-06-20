@@ -28,10 +28,11 @@ type HubOfHubsTransportBridge struct {
 	stopOnce             sync.Once
 }
 
-func NewTransportBridge(db db.HubOfHubsDB, transport transport.Transport,
+func NewTransportBridge(db db.HubOfHubsSpecDB, transport transport.Transport,
 	syncInterval time.Duration) *HubOfHubsTransportBridge {
 	return &HubOfHubsTransportBridge{
 		periodicSyncInterval: syncInterval,
+		stopChan:             make(chan struct{}, 1),
 		dbToTransportSyncers: []*genericDBToTransportSyncer{
 			{ // syncer for policy
 				db:                 db,
