@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/open-cluster-management/hub-of-hubs-transport-bridge/pkg/bundle"
+	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/bundle"
 	"log"
 	"os"
 	"time"

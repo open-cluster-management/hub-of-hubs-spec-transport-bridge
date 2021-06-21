@@ -1,7 +1,7 @@
 [comment]: # ( Copyright Contributors to the Open Cluster Management project )
 
-# Hub-of-Hubs Transport Bridge
-Red Hat Advanced Cluster Management Hub-of-Hubs Transport Bridge  
+# Hub-of-Hubs Spec Transport Bridge
+Red Hat Advanced Cluster Management Hub-of-Hubs Spec Transport Bridge  
 
 ## How it works
 
@@ -31,5 +31,5 @@ python -c "import sys, urllib as ul; print ul.quote_plus(sys.argv[1])" 'YourPass
 ```
 
 ```
-./build/bin/hoh-transport-bridge
+./build/bin/hoh-spec-transport-bridge
 ```

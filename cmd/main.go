@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/open-cluster-management/hub-of-hubs-transport-bridge/pkg/controller"
-	"github.com/open-cluster-management/hub-of-hubs-transport-bridge/pkg/db/postgresql"
-	hohSyncService "github.com/open-cluster-management/hub-of-hubs-transport-bridge/pkg/transport/sync-service"
+	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/controller"
+	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/db/postgresql"
+	hohSyncService "github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/transport/sync-service"
 	"log"
 	"os"
 	"time"

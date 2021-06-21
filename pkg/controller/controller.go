@@ -3,9 +3,9 @@ package controller
 import (
 	appsv1 "github.com/open-cluster-management/governance-policy-propagator/pkg/apis/apps/v1"
 	policiesv1 "github.com/open-cluster-management/governance-policy-propagator/pkg/apis/policy/v1"
-	"github.com/open-cluster-management/hub-of-hubs-transport-bridge/pkg/bundle"
-	"github.com/open-cluster-management/hub-of-hubs-transport-bridge/pkg/db"
-	"github.com/open-cluster-management/hub-of-hubs-transport-bridge/pkg/transport"
+	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/bundle"
+	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/db"
+	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/transport"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sync"
 	"time"

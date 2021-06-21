@@ -1,4 +1,4 @@
-module github.com/open-cluster-management/hub-of-hubs-transport-bridge
+module github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge
 
 go 1.16
 

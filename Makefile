@@ -5,12 +5,12 @@
 #   - fmt - formats the code
 #   - vendor - download all third party libraries and puts them inside vendor directory
 #   - clean-vendor - removes third party libraries from vendor directory
-#   - hoh-transport-bridge - builds hub-of-hubs-transport-bridge as an executable and puts it under build/bin
+#   - hoh-spec-transport-bridge - builds hub-of-hubs-transport-bridge as an executable and puts it under build/bin
 #   - clean - cleans the build area (all executables under build/bin)
 #   - clean-all - superset of 'clean' that also removes vendor dir
 
 .PHONY: all				##formats the code, downloads vendor libs, and builds executable
-all: fmt vendor hoh-transport-bridge
+all: fmt vendor hoh-spec-transport-bridge
 
 .PHONY: fmt				##formats the code
 fmt:
@@ -24,9 +24,9 @@ vendor:
 clean-vendor:
 	-@rm -rf vendor
 
-.PHONY: hoh-transport-bridge		##builds hub-of-hubs-transport-bridge as an executable and puts it under build/bin
-hoh-transport-bridge:
-	@go build -o build/bin/hoh-transport-bridge cmd/main.go
+.PHONY: hoh-spec-transport-bridge	##builds hub-of-hubs-spec-transport-bridge as an executable and puts it under build/bin
+hoh-spec-transport-bridge:
+	@go build -o build/bin/hoh-spec-transport-bridge cmd/main.go
 
 .PHONY: clean			##cleans the build area (all executables under build/bin)
 clean:

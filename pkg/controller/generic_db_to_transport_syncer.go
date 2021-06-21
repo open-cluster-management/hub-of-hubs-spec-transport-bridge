@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/open-cluster-management/hub-of-hubs-data-types"
-	"github.com/open-cluster-management/hub-of-hubs-transport-bridge/pkg/bundle"
-	hohDb "github.com/open-cluster-management/hub-of-hubs-transport-bridge/pkg/db"
-	"github.com/open-cluster-management/hub-of-hubs-transport-bridge/pkg/transport"
+	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/bundle"
+	hohDb "github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/db"
+	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/transport"
 	"log"
 	"time"
 )
