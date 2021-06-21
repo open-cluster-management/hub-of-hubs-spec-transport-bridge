@@ -73,6 +73,7 @@ func (b *HubOfHubsTransportBridge) Start() {
 
 func (b *HubOfHubsTransportBridge) Stop() {
 	b.stopOnce.Do(func() {
+		b.stopChan <- struct{}{}
 		close(b.stopChan)
 	})
 }
