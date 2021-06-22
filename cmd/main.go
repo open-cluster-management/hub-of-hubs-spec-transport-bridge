@@ -31,7 +31,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("the expected var %s is not valid duration", hohTransportSyncInterval)
 	}
-	transportBridgeController := controller.NewTransportBridge(postgreSQL, syncServiceObj, interval)
+	transportBridgeController := controller.NewSpecTransportBridge(postgreSQL, syncServiceObj, interval)
 	transportBridgeController.Start()
 	defer transportBridgeController.Stop()
 }

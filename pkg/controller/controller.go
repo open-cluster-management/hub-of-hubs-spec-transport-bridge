@@ -20,7 +20,7 @@ const (
 	placementBindingsTableName = "placementbindings"
 )
 
-type HubOfHubsTransportBridge struct {
+type HubOfHubsSpecTransportBridge struct {
 	periodicSyncInterval time.Duration
 	dbToTransportSyncers []*genericDBToTransportSyncer
 	stopChan             chan struct{}
@@ -28,9 +28,9 @@ type HubOfHubsTransportBridge struct {
 	stopOnce             sync.Once
 }
 
-func NewTransportBridge(db db.HubOfHubsSpecDB, transport transport.Transport,
-	syncInterval time.Duration) *HubOfHubsTransportBridge {
-	return &HubOfHubsTransportBridge{
+func NewSpecTransportBridge(db db.HubOfHubsSpecDB, transport transport.Transport,
+	syncInterval time.Duration) *HubOfHubsSpecTransportBridge {
+	return &HubOfHubsSpecTransportBridge{
 		periodicSyncInterval: syncInterval,
 		stopChan:             make(chan struct{}, 1),
 		dbToTransportSyncers: []*genericDBToTransportSyncer{
@@ -62,7 +62,7 @@ func NewTransportBridge(db db.HubOfHubsSpecDB, transport transport.Transport,
 	}
 }
 
-func (b *HubOfHubsTransportBridge) Start() {
+func (b *HubOfHubsSpecTransportBridge) Start() {
 	b.startOnce.Do(func() {
 		for _, syncer := range b.dbToTransportSyncers {
 			syncer.Init()
@@ -71,14 +71,14 @@ func (b *HubOfHubsTransportBridge) Start() {
 	})
 }
 
-func (b *HubOfHubsTransportBridge) Stop() {
+func (b *HubOfHubsSpecTransportBridge) Stop() {
 	b.stopOnce.Do(func() {
 		b.stopChan <- struct{}{}
 		close(b.stopChan)
 	})
 }
 
-func (b *HubOfHubsTransportBridge) periodicSync() {
+func (b *HubOfHubsSpecTransportBridge) periodicSync() {
 	ticker := time.NewTicker(b.periodicSyncInterval)
 	for {
 		select {
