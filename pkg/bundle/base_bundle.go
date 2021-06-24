@@ -27,25 +27,24 @@ type baseBundle struct {
 }
 
 func (b *baseBundle) AddObject(object metav1.Object, objectUID string) {
-	b.Objects = append(b.Objects, b.manipulate(object, objectUID))
+	b.setMetaDataAnnotation(object, objectUidAnnotationName, objectUID)
+	b.Objects = append(b.Objects, b.manipulate(object))
 }
 
-func (b *baseBundle) AddDeletedObject(object metav1.Object, objectUID string) {
-	b.DeletedObjects = append(b.DeletedObjects, b.manipulate(object, objectUID))
+func (b *baseBundle) AddDeletedObject(object metav1.Object) {
+	b.DeletedObjects = append(b.DeletedObjects, b.manipulate(object))
 }
 
-func (b *baseBundle) manipulate(object metav1.Object, objectUID string) metav1.Object {
+func (b *baseBundle) manipulate(object metav1.Object) metav1.Object {
 	b.manipulateCustomFunc(object)
-	b.manipulateCommon(object, objectUID)
+	b.manipulateNameAndNamespace(object)
 	return object
 }
 
 // manipulate name and namespace to avoid collisions of resources with same name on different ns.
-// add annotation with the HoH object id - to be able to reference the exact origin object
-func (b *baseBundle) manipulateCommon(object metav1.Object, objectUID string) {
+func (b *baseBundle) manipulateNameAndNamespace(object metav1.Object) {
 	object.SetName(fmt.Sprintf("%s-hoh-%s", object.GetName(), object.GetNamespace()))
 	object.SetNamespace(hohSystemNamespace)
-	b.setMetaDataAnnotation(object, objectUidAnnotationName, objectUID)
 }
 
 func (b *baseBundle) setMetaDataAnnotation(object metav1.Object, key string, value string) {
