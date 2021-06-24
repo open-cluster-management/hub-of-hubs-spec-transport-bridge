@@ -5,7 +5,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const hohSystemNamespace = "hoh-system"
+const (
+	hohSystemNamespace      = "hoh-system"
+	objectUidAnnotationName = "hub-of-hubs.open-cluster-management.io/originObjectUid"
+)
 
 func NewBaseBundle() Bundle {
 	return &baseBundle{
@@ -23,22 +26,33 @@ type baseBundle struct {
 	manipulateCustomFunc ManipulateCustomFunction
 }
 
-func (b *baseBundle) AddObject(object metav1.Object) {
-	b.Objects = append(b.Objects, b.manipulate(object))
+func (b *baseBundle) AddObject(object metav1.Object, objectUID string) {
+	b.Objects = append(b.Objects, b.manipulate(object, objectUID))
 }
 
-func (b *baseBundle) AddDeletedObject(object metav1.Object) {
-	b.DeletedObjects = append(b.DeletedObjects, b.manipulate(object))
+func (b *baseBundle) AddDeletedObject(object metav1.Object, objectUID string) {
+	b.DeletedObjects = append(b.DeletedObjects, b.manipulate(object, objectUID))
 }
 
-func (b *baseBundle) manipulate(object metav1.Object) metav1.Object {
+func (b *baseBundle) manipulate(object metav1.Object, objectUID string) metav1.Object {
 	b.manipulateCustomFunc(object)
-	b.manipulateNameAndNamespace(object)
+	b.manipulateCommon(object, objectUID)
 	return object
 }
 
 // manipulate name and namespace to avoid collisions of resources with same name on different ns.
-func (b *baseBundle) manipulateNameAndNamespace(object metav1.Object) {
+// add annotation with the HoH object id - to be able to reference the exact origin object
+func (b *baseBundle) manipulateCommon(object metav1.Object, objectUID string) {
 	object.SetName(fmt.Sprintf("%s-hoh-%s", object.GetName(), object.GetNamespace()))
 	object.SetNamespace(hohSystemNamespace)
+	b.setMetaDataAnnotation(object, objectUidAnnotationName, objectUID)
+}
+
+func (b *baseBundle) setMetaDataAnnotation(object metav1.Object, key string, value string) {
+	annotations := object.GetAnnotations()
+	if annotations == nil {
+		annotations = make(map[string]string)
+	}
+	annotations[key] = value
+	object.SetAnnotations(annotations)
 }

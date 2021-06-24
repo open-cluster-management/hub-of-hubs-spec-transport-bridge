@@ -56,9 +56,9 @@ func (p *PostgreSQL) GetBundle(tableName string, createObjFunc bundle.CreateObje
 			return nil, err
 		}
 		if deleted {
-			intoBundle.AddDeletedObject(object)
+			intoBundle.AddDeletedObject(object, id)
 		} else {
-			intoBundle.AddObject(object)
+			intoBundle.AddObject(object, id)
 		}
 	}
 	return timestamp, nil
