@@ -2,13 +2,11 @@ package bundle
 
 import (
 	"fmt"
+	datatypes "github.com/open-cluster-management/hub-of-hubs-data-types"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const (
-	hohSystemNamespace      = "hoh-system"
-	objectUidAnnotationName = "hub-of-hubs.open-cluster-management.io/originObjectUid"
-)
+const hohSystemNamespace      = "hoh-system"
 
 func NewBaseBundle() Bundle {
 	return &baseBundle{
@@ -27,7 +25,7 @@ type baseBundle struct {
 }
 
 func (b *baseBundle) AddObject(object metav1.Object, objectUID string) {
-	b.setMetaDataAnnotation(object, objectUidAnnotationName, objectUID)
+	b.setMetaDataAnnotation(object, datatypes.OriginOwnerReferenceAnnotation, objectUID)
 	b.Objects = append(b.Objects, b.manipulate(object))
 }
 
