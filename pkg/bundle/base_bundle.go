@@ -6,8 +6,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const hohSystemNamespace = "hoh-system"
-
 func NewBaseBundle() Bundle {
 	return &baseBundle{
 		Objects:              make([]metav1.Object, 0),
@@ -42,7 +40,7 @@ func (b *baseBundle) manipulate(object metav1.Object) metav1.Object {
 // manipulate name and namespace to avoid collisions of resources with same name on different ns.
 func (b *baseBundle) manipulateNameAndNamespace(object metav1.Object) {
 	object.SetName(fmt.Sprintf("%s-hoh-%s", object.GetName(), object.GetNamespace()))
-	object.SetNamespace(hohSystemNamespace)
+	object.SetNamespace(datatypes.HohSystemNamespace)
 }
 
 func (b *baseBundle) setMetaDataAnnotation(object metav1.Object, key string, value string) {
