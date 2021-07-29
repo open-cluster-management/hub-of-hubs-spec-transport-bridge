@@ -5,11 +5,11 @@ import (
 )
 
 type (
-	// CreateObjectFunction is a function that specifies how to create an object
+	// CreateObjectFunction is a function that specifies how to create an object.
 	CreateObjectFunction func() metav1.Object
-	// CreateBundleFunction is a function that specifies how to create a bundle
+	// CreateBundleFunction is a function that specifies how to create a bundle.
 	CreateBundleFunction func() Bundle
-	// ManipulateCustomFunction is a function that specifies how to do customized manipulation to a specific object
+	// ManipulateCustomFunction is a function that specifies how to do customized manipulation to a specific object.
 	ManipulateCustomFunction func(object metav1.Object)
 )
 
