@@ -2,10 +2,13 @@ package bundle
 
 import (
 	"fmt"
+
 	datatypes "github.com/open-cluster-management/hub-of-hubs-data-types"
+	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/helpers"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// NewBaseBundle creates a new base bundle with no data in it.
 func NewBaseBundle() Bundle {
 	return &baseBundle{
 		Objects:              make([]metav1.Object, 0),
@@ -22,11 +25,13 @@ type baseBundle struct {
 	manipulateCustomFunc ManipulateCustomFunction
 }
 
+// AddObject adds an object to the bundle.
 func (b *baseBundle) AddObject(object metav1.Object, objectUID string) {
-	b.setMetaDataAnnotation(object, datatypes.OriginOwnerReferenceAnnotation, objectUID)
+	helpers.SetMetaDataAnnotation(object, datatypes.OriginOwnerReferenceAnnotation, objectUID)
 	b.Objects = append(b.Objects, b.manipulate(object))
 }
 
+// AddObject adds a deleted object to the bundle.
 func (b *baseBundle) AddDeletedObject(object metav1.Object) {
 	b.DeletedObjects = append(b.DeletedObjects, b.manipulate(object))
 }
@@ -34,6 +39,7 @@ func (b *baseBundle) AddDeletedObject(object metav1.Object) {
 func (b *baseBundle) manipulate(object metav1.Object) metav1.Object {
 	b.manipulateCustomFunc(object)
 	b.manipulateNameAndNamespace(object)
+
 	return object
 }
 
@@ -41,13 +47,4 @@ func (b *baseBundle) manipulate(object metav1.Object) metav1.Object {
 func (b *baseBundle) manipulateNameAndNamespace(object metav1.Object) {
 	object.SetName(fmt.Sprintf("%s-hoh-%s", object.GetName(), object.GetNamespace()))
 	object.SetNamespace(datatypes.HohSystemNamespace)
-}
-
-func (b *baseBundle) setMetaDataAnnotation(object metav1.Object, key string, value string) {
-	annotations := object.GetAnnotations()
-	if annotations == nil {
-		annotations = make(map[string]string)
-	}
-	annotations[key] = value
-	object.SetAnnotations(annotations)
 }

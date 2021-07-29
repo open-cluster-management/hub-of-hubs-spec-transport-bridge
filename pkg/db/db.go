@@ -1,11 +1,16 @@
 package db
 
 import (
-	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/bundle"
+	"context"
 	"time"
+
+	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/bundle"
 )
 
+// HubOfHubsSpecDB is the needed interface for the db transport bridge
 type HubOfHubsSpecDB interface {
-	GetBundle(tableName string, createObjFunc bundle.CreateObjectFunction, intoBundle bundle.Bundle) (*time.Time, error)
-	GetLastUpdateTimestamp(tableName string) (*time.Time, error)
+	GetBundle(ctx context.Context, tableName string, createObjFunc bundle.CreateObjectFunction,
+		intoBundle bundle.Bundle) (*time.Time, error)
+	GetLastUpdateTimestamp(ctx context.Context, tableName string) (*time.Time, error)
+	Stop()
 }

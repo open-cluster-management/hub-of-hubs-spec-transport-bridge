@@ -4,73 +4,81 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"time"
+
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/bundle"
-	"log"
-	"os"
-	"time"
 )
 
 const (
-	databaseURLEnvVar = "DATABASE_URL"
+	envVarDatabaseURL = "DATABASE_URL"
 )
 
+// PostgreSQL abstracts PostgreSQL client
 type PostgreSQL struct {
 	conn *pgxpool.Pool
 }
 
-func NewPostgreSQL() *PostgreSQL {
-	databaseURL := os.Getenv(databaseURLEnvVar)
-	if databaseURL == "" {
-		log.Fatalf("the expected argument %s is not set in environment variables", databaseURLEnvVar)
+// NewPostgreSQL creates a new instance of PostgreSQL object
+func NewPostgreSQL() (*PostgreSQL, error) {
+	databaseURL, found := os.LookupEnv(envVarDatabaseURL)
+	if !found {
+		return nil, fmt.Errorf("not found: environment variable %s", envVarDatabaseURL)
 	}
+
 	dbConnectionPool, err := pgxpool.Connect(context.Background(), databaseURL)
 	if err != nil {
-		log.Fatalf("unable to connect to db: %s", err)
+		return nil, fmt.Errorf("unable to connect to db: %w", err)
 	}
-	return &PostgreSQL{
-		conn: dbConnectionPool,
-	}
+
+	return &PostgreSQL{conn: dbConnectionPool}, nil
 }
 
+// Stop stops PostgreSQL and closes the connection pool
 func (p *PostgreSQL) Stop() {
 	p.conn.Close()
 }
 
-func (p *PostgreSQL) GetBundle(tableName string, createObjFunc bundle.CreateObjectFunction,
+// GetBundle returns a bundle of objects from a specific table
+func (p *PostgreSQL) GetBundle(ctx context.Context, tableName string, createObjFunc bundle.CreateObjectFunction,
 	intoBundle bundle.Bundle) (*time.Time, error) {
-	timestamp, err := p.GetLastUpdateTimestamp(tableName)
+	timestamp, err := p.GetLastUpdateTimestamp(ctx, tableName)
 	if err != nil {
 		return nil, err
 	}
-	rows, _ := p.conn.Query(context.Background(),
-		fmt.Sprintf(`SELECT id,payload,deleted FROM spec.%s`, tableName))
+
+	rows, _ := p.conn.Query(ctx, fmt.Sprintf(`SELECT id,payload,deleted FROM spec.%s`, tableName))
 	for rows.Next() {
 		var id string
+
 		var deleted bool
+
 		object := createObjFunc()
-		err := rows.Scan(&id, &object, &deleted)
-		if err != nil {
-			log.Printf("error reading from table spec.%s - %s", tableName, err)
-			return nil, err
+		if err := rows.Scan(&id, &object, &deleted); err != nil {
+			return nil, fmt.Errorf("error reading from table spec.%s - %w", tableName, err)
 		}
+
 		if deleted {
 			intoBundle.AddDeletedObject(object)
 		} else {
 			intoBundle.AddObject(object, id)
 		}
 	}
+
 	return timestamp, nil
 }
 
-func (p *PostgreSQL) GetLastUpdateTimestamp(tableName string) (*time.Time, error) {
+// GetLastUpdateTimestamp returns the last update timestamp of a specific table
+func (p *PostgreSQL) GetLastUpdateTimestamp(ctx context.Context, tableName string) (*time.Time, error) {
 	var lastTimestamp time.Time
-	err := p.conn.QueryRow(context.Background(),
+	err := p.conn.QueryRow(ctx,
 		fmt.Sprintf(`SELECT MAX(updated_at) FROM spec.%s`, tableName)).Scan(&lastTimestamp)
 
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, fmt.Errorf("no objects in the table spec.%s", tableName)
 	}
+
 	return &lastTimestamp, nil
 }
