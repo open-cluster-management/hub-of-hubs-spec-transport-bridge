@@ -151,20 +151,18 @@ func (r *genericSpecToTransportSyncer) periodicSync() {
 	ticker := time.NewTicker(r.syncInterval)
 
 	for {
-		select {
-		case <-ticker.C:
-			if r.HubOfHubsObject.Object == nil {
-				continue
-			}
+		<-ticker.C
+		if r.HubOfHubsObject.Object == nil {
+			continue
+		}
 
-			resourceVersion := r.HubOfHubsObject.Object.GetResourceVersion()
+		resourceVersion := r.HubOfHubsObject.Object.GetResourceVersion()
 
-			if resourceVersion > r.lastSentObjectResourceVersion { // send to transport only if object has changed
-				cleanObject(r.HubOfHubsObject.Object)
-				r.syncToTransport(datatypes.Config, datatypes.Config, resourceVersion, r.HubOfHubsObject)
+		if resourceVersion > r.lastSentObjectResourceVersion { // send to transport only if object has changed
+			cleanObject(r.HubOfHubsObject.Object)
+			r.syncToTransport(datatypes.Config, datatypes.Config, resourceVersion, r.HubOfHubsObject)
 
-				r.lastSentObjectResourceVersion = resourceVersion
-			}
+			r.lastSentObjectResourceVersion = resourceVersion
 		}
 	}
 }
