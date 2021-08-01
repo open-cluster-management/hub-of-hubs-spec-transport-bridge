@@ -36,6 +36,7 @@ type genericSpecToTransportSyncer struct {
 	syncInterval                  time.Duration
 	finalizerName                 string
 	createObjFunc                 func() object
+	manipulateObjFunc             func(object) object
 	HubOfHubsObject               hubOfHubsObject
 	lastSentObjectResourceVersion string
 	startOnce                     sync.Once
