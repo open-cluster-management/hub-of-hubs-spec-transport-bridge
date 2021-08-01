@@ -101,7 +101,7 @@ func (r *genericSpecToTransportSyncer) updateObjectAndFinalizer(ctx context.Cont
 	// put object for sync in next periodic sync cycle
 	helpers.SetMetaDataAnnotation(object, datatypes.OriginOwnerReferenceAnnotation, string(object.GetUID()))
 
-	r.HubOfHubsObject.Object = object
+	r.HubOfHubsObject.Object = r.manipulateObjFunc(object)
 	r.HubOfHubsObject.Deleted = false
 
 	return nil
@@ -126,7 +126,7 @@ func (r *genericSpecToTransportSyncer) addFinalizer(ctx context.Context, object 
 func (r *genericSpecToTransportSyncer) deleteObjectAndFinalizer(ctx context.Context, object object,
 	log logr.Logger) error {
 	// put object for sync in next periodic sync cycle
-	r.HubOfHubsObject.Object = object
+	r.HubOfHubsObject.Object = r.manipulateObjFunc(object)
 	r.HubOfHubsObject.Deleted = true
 
 	return r.removeFinalizer(ctx, object, log)
