@@ -151,6 +151,7 @@ func (r *genericSpecToTransportSyncer) periodicSync() {
 	ticker := time.NewTicker(r.syncInterval)
 
 	for {
+		// wait until ticker time expires
 		<-ticker.C
 		if r.HubOfHubsObject.Object == nil {
 			continue
