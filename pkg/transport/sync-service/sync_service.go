@@ -31,7 +31,7 @@ type SyncService struct {
 func NewSyncService(log logr.Logger) (*SyncService, error) {
 	serverProtocol, host, port, err := readEnvVars()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to initialize sync service - %w", err)
 	}
 
 	syncServiceClient := client.NewSyncServiceClient(serverProtocol, host, port)

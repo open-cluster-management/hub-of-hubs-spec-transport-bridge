@@ -1,7 +1,12 @@
-
+# Copyright IBM Corp All Rights Reserved.
+# Copyright London Stock Exchange Group All Rights Reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# -------------------------------------------------------------
 # This makefile defines the following targets
 #
-#   - all (default) - formats the code, downloads vendor libs, and builds executable
+#   - all (default) - formats the code, runs liners, downloads vendor libs, and builds executable
 #   - fmt - formats the code
 #   - vendor - download all third party libraries and puts them inside vendor directory
 #   - clean-vendor - removes third party libraries from vendor directory
@@ -16,7 +21,7 @@ COMPONENT := $(shell basename $(shell pwd))
 IMAGE_TAG ?= latest
 IMAGE := ${REGISTRY}/${COMPONENT}:${IMAGE_TAG}
 
-.PHONY: all				##formats the code, downloads vendor libs, and builds executable
+.PHONY: all				##formats the code, runs liners, downloads vendor libs, and builds executable
 all: clean-vendor fmt lint vendor build
 
 .PHONY: fmt				##formats the code
