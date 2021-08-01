@@ -65,7 +65,7 @@ func readEnvVars() (string, string, uint16, error) {
 
 	port, err := strconv.Atoi(portString)
 	if err != nil {
-		return "", "", 0, fmt.Errorf("the environment var %s is not valid port", envVarSyncServicePort)
+		return "", "", 0, fmt.Errorf("the environment var %s is not valid port - %w", envVarSyncServicePort, err)
 	}
 
 	return protocol, host, uint16(port), nil

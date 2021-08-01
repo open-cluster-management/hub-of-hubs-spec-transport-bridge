@@ -21,7 +21,7 @@ type PostgreSQL struct {
 	conn *pgxpool.Pool
 }
 
-// NewPostgreSQL creates a new instance of PostgreSQL object
+// NewPostgreSQL creates a new instance of PostgreSQL object.
 func NewPostgreSQL() (*PostgreSQL, error) {
 	databaseURL, found := os.LookupEnv(envVarDatabaseURL)
 	if !found {
@@ -36,12 +36,12 @@ func NewPostgreSQL() (*PostgreSQL, error) {
 	return &PostgreSQL{conn: dbConnectionPool}, nil
 }
 
-// Stop stops PostgreSQL and closes the connection pool
+// Stop stops PostgreSQL and closes the connection pool.
 func (p *PostgreSQL) Stop() {
 	p.conn.Close()
 }
 
-// GetBundle returns a bundle of objects from a specific table
+// GetBundle returns a bundle of objects from a specific table.
 func (p *PostgreSQL) GetBundle(ctx context.Context, tableName string, createObjFunc bundle.CreateObjectFunction,
 	intoBundle bundle.Bundle) (*time.Time, error) {
 	timestamp, err := p.GetLastUpdateTimestamp(ctx, tableName)
@@ -70,7 +70,7 @@ func (p *PostgreSQL) GetBundle(ctx context.Context, tableName string, createObjF
 	return timestamp, nil
 }
 
-// GetLastUpdateTimestamp returns the last update timestamp of a specific table
+// GetLastUpdateTimestamp returns the last update timestamp of a specific table.
 func (p *PostgreSQL) GetLastUpdateTimestamp(ctx context.Context, tableName string) (*time.Time, error) {
 	var lastTimestamp time.Time
 	err := p.conn.QueryRow(ctx,
