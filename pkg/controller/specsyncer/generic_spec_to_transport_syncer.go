@@ -108,7 +108,7 @@ func (r *genericSpecToTransportSyncer) updateObjectAndFinalizer(ctx context.Cont
 
 func (r *genericSpecToTransportSyncer) addFinalizer(ctx context.Context, object object,
 	log logr.Logger) error {
-	if containsString(object.GetFinalizers(), r.finalizerName) {
+	if helpers.ContainsString(object.GetFinalizers(), r.finalizerName) {
 		return nil
 	}
 
@@ -133,7 +133,7 @@ func (r *genericSpecToTransportSyncer) deleteObjectAndFinalizer(ctx context.Cont
 
 func (r *genericSpecToTransportSyncer) removeFinalizer(ctx context.Context, object object,
 	log logr.Logger) error {
-	if !containsString(object.GetFinalizers(), r.finalizerName) {
+	if !helpers.ContainsString(object.GetFinalizers(), r.finalizerName) {
 		return nil // if finalizer is not there, do nothing
 	}
 
@@ -190,14 +190,4 @@ func cleanObject(object object) {
 	object.SetClusterName("")
 
 	delete(object.GetAnnotations(), "kubectl.kubernetes.io/last-applied-configuration")
-}
-
-func containsString(slice []string, s string) bool {
-	for _, item := range slice {
-		if item == s {
-			return true
-		}
-	}
-
-	return false
 }

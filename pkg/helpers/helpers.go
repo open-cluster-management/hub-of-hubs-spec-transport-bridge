@@ -13,3 +13,14 @@ func SetMetaDataAnnotation(object metav1.Object, key string, value string) {
 
 	object.SetAnnotations(annotations)
 }
+
+// ContainsString returns true if the string exists in the array and false otherwise
+func ContainsString(slice []string, s string) bool {
+	for _, item := range slice {
+		if item == s {
+			return true
+		}
+	}
+
+	return false
+}

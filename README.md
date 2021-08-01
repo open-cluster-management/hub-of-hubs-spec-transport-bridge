@@ -15,7 +15,8 @@ The spec transport bridge component of [Hub-of-Hubs](https://github.com/open-clu
     $ export REGISTRY=...
     ```
     
-1.  Set the `IMAGE_TAG` environment variable to hold the required version of the image:
+1.  Set the `IMAGE_TAG` environment variable to hold the required version of the image.  
+    default value is `latest`, so in that case no need to specify this variable:
     ```
     $ export IMAGE_TAG=latest
     ```
