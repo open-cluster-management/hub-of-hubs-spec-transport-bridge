@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/go-logr/logr"
+	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/transport"
 	"github.com/open-horizon/edge-sync-service-client/client"
 )
 
@@ -20,7 +21,7 @@ const (
 // SyncService abstracts Open Horizon Sync Service usage.
 type SyncService struct {
 	client    *client.SyncServiceClient
-	msgChan   chan *syncServiceMessage
+	msgChan   chan *transport.Message
 	stopChan  chan struct{}
 	startOnce sync.Once
 	stopOnce  sync.Once
@@ -41,7 +42,7 @@ func NewSyncService(log logr.Logger) (*SyncService, error) {
 
 	return &SyncService{
 		client:   syncServiceClient,
-		msgChan:  make(chan *syncServiceMessage),
+		msgChan:  make(chan *transport.Message),
 		stopChan: make(chan struct{}, 1),
 		log:      log,
 	}, nil
@@ -87,11 +88,11 @@ func (s *SyncService) Stop() {
 
 // SendAsync sends a message to the sync service asynchronously.
 func (s *SyncService) SendAsync(id string, msgType string, version string, payload []byte) {
-	message := &syncServiceMessage{
-		id:      id,
-		msgType: msgType,
-		version: version,
-		payload: payload,
+	message := &transport.Message{
+		ID:      id,
+		MsgType: msgType,
+		Version: version,
+		Payload: payload,
 	}
 	s.msgChan <- message
 }
@@ -113,9 +114,9 @@ func (s *SyncService) distributeMessages() {
 			return
 		case msg := <-s.msgChan:
 			metaData := client.ObjectMetaData{
-				ObjectID:   msg.id,
-				ObjectType: msg.msgType,
-				Version:    msg.version,
+				ObjectID:   msg.ID,
+				ObjectType: msg.MsgType,
+				Version:    msg.Version,
 			}
 
 			err := s.client.UpdateObject(&metaData)
@@ -124,7 +125,7 @@ func (s *SyncService) distributeMessages() {
 				continue
 			}
 
-			reader := bytes.NewReader(msg.payload)
+			reader := bytes.NewReader(msg.Payload)
 			err = s.client.UpdateObjectData(&metaData, reader)
 
 			if err != nil {
@@ -132,8 +133,8 @@ func (s *SyncService) distributeMessages() {
 				continue
 			}
 
-			s.log.Info("Message sent successfully", "id", msg.id, "type", msg.msgType, "version",
-				msg.version)
+			s.log.Info("Message sent successfully", "id", msg.ID, "type", msg.MsgType, "version",
+				msg.Version)
 		}
 	}
 }

@@ -30,9 +30,20 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - events
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
   - pods
   - configmaps
-  - events
   verbs:
   - create
   - delete
@@ -55,6 +66,8 @@ kind: Deployment
 metadata:
   name: hub-of-hubs-spec-transport-bridge
   namespace: open-cluster-management
+  kafka_hosts: kafka-cluster-kafka-bootstrap.kafka.svc:9092
+  transport_type: kafka
 spec:
   replicas: 1
   selector:

@@ -15,6 +15,7 @@ import (
 	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/db"
 	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/db/postgresql"
 	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/transport"
+	kafkaClient "github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/transport/kafka-client"
 	hohSyncService "github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/transport/sync-service"
 	"github.com/operator-framework/operator-sdk/pkg/log/zap"
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
@@ -30,6 +31,7 @@ const (
 	metricsPort                 int32 = 8965
 	envVarControllerNamespace         = "POD_NAMESPACE"
 	envVarTransportSyncInterval       = "HOH_TRANSPORT_SYNC_INTERVAL"
+	envVarTransportComponent          = "HOH_TRANSPORT_TYPE"
 	leaderElectionLockName            = "hub-of-hubs-spec-transport-bridge-lock"
 )
 
@@ -37,6 +39,19 @@ func printVersion(log logr.Logger) {
 	log.Info(fmt.Sprintf("Go Version: %s", runtime.Version()))
 	log.Info(fmt.Sprintf("Go OS/Arch: %s/%s", runtime.GOOS, runtime.GOARCH))
 	log.Info(fmt.Sprintf("Version of operator-sdk: %v", sdkVersion.Version))
+}
+
+// function to choose transport type based on env var.
+func getTransport(transportType string) (transport.Transport, error) {
+	switch transportType {
+	case "kafka":
+		return kafkaClient.NewKafkaProducer(ctrl.Log.WithName("kafka-client"))
+	case "syncservice":
+		return hohSyncService.NewSyncService(ctrl.Log.WithName("sync-service"))
+	default:
+		return nil, fmt.Errorf("the expected env var %v expects \"kafka\" or \"syncservice\" for value",
+			envVarTransportComponent)
+	}
 }
 
 // function to handle defers with exit, see https://stackoverflow.com/a/27629493/553720.
@@ -68,6 +83,12 @@ func doMain() int {
 		return 1
 	}
 
+	transportType, found := os.LookupEnv(envVarTransportComponent)
+	if !found {
+		log.Error(nil, "Not found:", "environment variable", envVarTransportComponent)
+		return 1
+	}
+
 	// db layer initialization
 	postgreSQL, err := postgresql.NewPostgreSQL()
 	if err != nil {
@@ -78,16 +99,15 @@ func doMain() int {
 	defer postgreSQL.Stop()
 
 	// transport layer initialization
-	syncService, err := hohSyncService.NewSyncService(ctrl.Log.WithName("sync-service"))
+	transportObj, err := getTransport(transportType)
 	if err != nil {
-		log.Error(err, "initialization error", "failed to initialize", "SyncService")
+		log.Error(err, "initialization error", "failed to initialize", transportType)
 		return 1
 	}
+	transportObj.Start()
+	defer transportObj.Stop()
 
-	syncService.Start()
-	defer syncService.Stop()
-
-	mgr, err := createManager(leaderElectionNamespace, metricsHost, metricsPort, postgreSQL, syncService, syncInterval)
+	mgr, err := createManager(leaderElectionNamespace, metricsHost, metricsPort, postgreSQL, transportObj, syncInterval)
 	if err != nil {
 		log.Error(err, "Failed to create manager")
 		return 1
