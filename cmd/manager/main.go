@@ -117,14 +117,6 @@ func createManager(leaderElectionNamespace, metricsHost string, metricsPort int3
 		return nil, fmt.Errorf("failed to create a new manager: %w", err)
 	}
 
-	if err = controller.AddToScheme(mgr.GetScheme()); err != nil {
-		return nil, fmt.Errorf("failed to add schemes: %w", err)
-	}
-
-	if err := controller.AddSpecToTransportSyncers(mgr, syncService, syncInterval); err != nil {
-		return nil, fmt.Errorf("failed to add spec syncers: %w", err)
-	}
-
 	if err := controller.AddDBToTransportSyncers(mgr, postgreSQL, syncService, syncInterval); err != nil {
 		return nil, fmt.Errorf("failed to add db syncers: %w", err)
 	}
