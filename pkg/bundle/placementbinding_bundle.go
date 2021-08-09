@@ -17,7 +17,11 @@ func NewPlacementBindingBundle() Bundle {
 }
 
 func manipulateCustom(object metav1.Object) {
-	placementBinding := object.(*policiesv1.PlacementBinding)
+	placementBinding, ok := object.(*policiesv1.PlacementBinding)
+	if !ok {
+		return
+	}
+
 	namespace := placementBinding.GetNamespace()
 	placementBinding.PlacementRef.Name = fmt.Sprintf("%s-hoh-%s", placementBinding.PlacementRef.Name, namespace)
 

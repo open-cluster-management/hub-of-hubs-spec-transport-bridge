@@ -2,6 +2,7 @@ package syncservice
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -16,6 +17,8 @@ const (
 	envVarSyncServiceHost     = "SYNC_SERVICE_HOST"
 	envVarSyncServicePort     = "SYNC_SERVICE_PORT"
 )
+
+var errEnvVarNotFound = errors.New("not found environment variable")
 
 // SyncService abstracts Open Horizon Sync Service usage.
 type SyncService struct {
@@ -50,17 +53,17 @@ func NewSyncService(log logr.Logger) (*SyncService, error) {
 func readEnvVars() (string, string, uint16, error) {
 	protocol, found := os.LookupEnv(envVarSyncServiceProtocol)
 	if !found {
-		return "", "", 0, fmt.Errorf("not found: environment variable %s", envVarSyncServiceProtocol)
+		return "", "", 0, fmt.Errorf("%w: %s", errEnvVarNotFound, envVarSyncServiceProtocol)
 	}
 
 	host, found := os.LookupEnv(envVarSyncServiceHost)
 	if !found {
-		return "", "", 0, fmt.Errorf("not found: environment variable %s", envVarSyncServiceHost)
+		return "", "", 0, fmt.Errorf("%w: %s", errEnvVarNotFound, envVarSyncServiceHost)
 	}
 
 	portString, found := os.LookupEnv(envVarSyncServicePort)
 	if !found {
-		return "", "", 0, fmt.Errorf("not found: environment variable %s", envVarSyncServicePort)
+		return "", "", 0, fmt.Errorf("%w: %s", errEnvVarNotFound, envVarSyncServicePort)
 	}
 
 	port, err := strconv.Atoi(portString)

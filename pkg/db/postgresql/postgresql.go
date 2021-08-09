@@ -16,7 +16,9 @@ const (
 	envVarDatabaseURL = "DATABASE_URL"
 )
 
-// PostgreSQL abstracts PostgreSQL client
+var errEnvVarNotFound = errors.New("not found environment variable")
+
+// PostgreSQL abstracts PostgreSQL client.
 type PostgreSQL struct {
 	conn *pgxpool.Pool
 }
@@ -25,7 +27,7 @@ type PostgreSQL struct {
 func NewPostgreSQL() (*PostgreSQL, error) {
 	databaseURL, found := os.LookupEnv(envVarDatabaseURL)
 	if !found {
-		return nil, fmt.Errorf("not found: environment variable %s", envVarDatabaseURL)
+		return nil, fmt.Errorf("%w: %s", errEnvVarNotFound, envVarDatabaseURL)
 	}
 
 	dbConnectionPool, err := pgxpool.Connect(context.Background(), databaseURL)
@@ -77,7 +79,7 @@ func (p *PostgreSQL) GetLastUpdateTimestamp(ctx context.Context, tableName strin
 		fmt.Sprintf(`SELECT MAX(updated_at) FROM spec.%s`, tableName)).Scan(&lastTimestamp)
 
 	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, fmt.Errorf("no objects in the table spec.%s", tableName)
+		return nil, fmt.Errorf("no objects in the table spec.%s - %w", tableName, err)
 	}
 
 	return &lastTimestamp, nil

@@ -1,6 +1,7 @@
 package dbsyncer
 
 import (
+	"fmt"
 	"time"
 
 	policiesv1 "github.com/open-cluster-management/governance-policy-propagator/pkg/apis/policy/v1"
@@ -19,7 +20,7 @@ const (
 // AddPlacementBindingsDBToTransportSyncer adds placement bindings db to transport syncer to the manager.
 func AddPlacementBindingsDBToTransportSyncer(mgr ctrl.Manager, db db.HubOfHubsSpecDB, transport transport.Transport,
 	syncInterval time.Duration) error {
-	return mgr.Add(&genericDBToTransportSyncer{
+	if err := mgr.Add(&genericDBToTransportSyncer{
 		log:                ctrl.Log.WithName("policy-db-to-transport-syncer"),
 		db:                 db,
 		dbTableName:        placementBindingsTableName,
@@ -28,5 +29,9 @@ func AddPlacementBindingsDBToTransportSyncer(mgr ctrl.Manager, db db.HubOfHubsSp
 		syncInterval:       syncInterval,
 		createObjFunc:      func() metav1.Object { return &policiesv1.PlacementBinding{} },
 		createBundleFunc:   bundle.NewPlacementBindingBundle,
-	})
+	}); err != nil {
+		return fmt.Errorf("failed to add db to transport syncer - %w", err)
+	}
+
+	return nil
 }

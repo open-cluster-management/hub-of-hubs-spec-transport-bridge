@@ -1,6 +1,7 @@
 package dbsyncer
 
 import (
+	"fmt"
 	"time"
 
 	policiesv1 "github.com/open-cluster-management/governance-policy-propagator/pkg/apis/policy/v1"
@@ -19,7 +20,7 @@ const (
 // AddPoliciesDBToTransportSyncer adds policies db to transport syncer to the manager.
 func AddPoliciesDBToTransportSyncer(mgr ctrl.Manager, db db.HubOfHubsSpecDB, transport transport.Transport,
 	syncInterval time.Duration) error {
-	return mgr.Add(&genericDBToTransportSyncer{
+	if err := mgr.Add(&genericDBToTransportSyncer{
 		log:                ctrl.Log.WithName("policy-db-to-transport-syncer"),
 		db:                 db,
 		dbTableName:        policiesTableName,
@@ -28,5 +29,9 @@ func AddPoliciesDBToTransportSyncer(mgr ctrl.Manager, db db.HubOfHubsSpecDB, tra
 		syncInterval:       syncInterval,
 		createObjFunc:      func() metav1.Object { return &policiesv1.Policy{} },
 		createBundleFunc:   bundle.NewBaseBundle,
-	})
+	}); err != nil {
+		return fmt.Errorf("failed to add db to transport syncer - %w", err)
+	}
+
+	return nil
 }
