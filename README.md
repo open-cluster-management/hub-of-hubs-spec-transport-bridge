@@ -69,12 +69,12 @@ If you chose Kafka for transport, set the following environment variables:
     $ export KAFKA_PRODUCER_ID=...
     ```
 
+Otherwise, if you chose Sync-Service as transport, set the following:
+
 1.  Set the `SYNC_SERVICE_HOST` environment variable to hold the CSS host.
     ```
     $ export SYNC_SERVICE_HOST=...
     ```
-
-Otherwise, if you chose Sync-Service as transport, set the following:
 
 1.  Set the `SYNC_SERVICE_PORT` environment variable to hold the CSS port.
     ```
