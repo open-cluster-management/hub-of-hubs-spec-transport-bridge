@@ -47,7 +47,7 @@ func (p *HOHProducer) deliveryHandler(e *kafka.Event) {
 
 			err := json.Unmarshal(ev.Value, load)
 			if err != nil {
-				p.log.Error(ev.TopicPartition.Error, "Failed to deliver message",
+				p.log.Error(err, "Failed to deliver message",
 					"Topic Name", ev.TopicPartition)
 				return
 			}
