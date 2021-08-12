@@ -74,7 +74,7 @@ spec:
             - name: HOH_TRANSPORT_TYPE
               value: "$HOH_TRANSPORT_TYPE"
             - name: KAFKA_PRODUCER_ID
-              value: "hoh_spec_producer"
+              value: "hoh-spec-producer"
             - name: KAFKA_PRODUCER_HOSTS
               value: "$KAFKA_PRODUCER_HOSTS"
             - name: KAFKA_PRODUCER_TOPIC
