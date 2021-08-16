@@ -2,11 +2,11 @@ package syncservice
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"os"
 	"strconv"
-	"sync"
 
 	"github.com/go-logr/logr"
 	"github.com/open-horizon/edge-sync-service-client/client"
@@ -22,12 +22,9 @@ var errEnvVarNotFound = errors.New("not found environment variable")
 
 // SyncService abstracts Open Horizon Sync Service usage.
 type SyncService struct {
-	client    *client.SyncServiceClient
-	msgChan   chan *syncServiceMessage
-	stopChan  chan struct{}
-	startOnce sync.Once
-	stopOnce  sync.Once
-	log       logr.Logger
+	client  *client.SyncServiceClient
+	msgChan chan *syncServiceMessage
+	log     logr.Logger
 }
 
 // NewSyncService returns a new instance of SyncService object.
@@ -43,10 +40,9 @@ func NewSyncService(log logr.Logger) (*SyncService, error) {
 	syncServiceClient.SetAppKeyAndSecret("user@myorg", "")
 
 	return &SyncService{
-		client:   syncServiceClient,
-		msgChan:  make(chan *syncServiceMessage),
-		stopChan: make(chan struct{}, 1),
-		log:      log,
+		client:  syncServiceClient,
+		msgChan: make(chan *syncServiceMessage),
+		log:     log,
 	}, nil
 }
 
@@ -75,17 +71,21 @@ func readEnvVars() (string, string, uint16, error) {
 }
 
 // Start starts the sync service.
-func (s *SyncService) Start() {
-	s.startOnce.Do(func() {
-		go s.distributeMessages()
-	})
-}
+func (s *SyncService) Start(stopChannel <-chan struct{}) error {
+	ctx, cancelContext := context.WithCancel(context.Background())
+	defer cancelContext()
 
-// Stop stops the sync service.
-func (s *SyncService) Stop() {
-	s.stopOnce.Do(func() {
-		close(s.stopChan)
-	})
+	go s.distributeMessages(ctx)
+
+	for {
+		<-stopChannel // blocking wait until getting stop event on the stop channel.
+
+		cancelContext()
+
+		s.log.Info("stopped sync service")
+
+		return nil
+	}
 }
 
 // SendAsync sends a message to the sync service asynchronously.
@@ -109,11 +109,12 @@ func (s *SyncService) GetVersion(id string, msgType string) string {
 	return objectMetadata.Version
 }
 
-func (s *SyncService) distributeMessages() {
+func (s *SyncService) distributeMessages(ctx context.Context) {
 	for {
 		select {
-		case <-s.stopChan:
+		case <-ctx.Done():
 			return
+
 		case msg := <-s.msgChan:
 			metaData := client.ObjectMetaData{
 				ObjectID:   msg.id,

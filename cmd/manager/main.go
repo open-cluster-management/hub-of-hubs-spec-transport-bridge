@@ -84,9 +84,6 @@ func doMain() int {
 		return 1
 	}
 
-	syncService.Start()
-	defer syncService.Stop()
-
 	mgr, err := createManager(leaderElectionNamespace, metricsHost, metricsPort, postgreSQL, syncService, syncInterval)
 	if err != nil {
 		log.Error(err, "Failed to create manager")
@@ -104,7 +101,7 @@ func doMain() int {
 }
 
 func createManager(leaderElectionNamespace, metricsHost string, metricsPort int32, postgreSQL db.HubOfHubsSpecDB,
-	syncService transport.Transport, syncInterval time.Duration) (ctrl.Manager, error) {
+	transport transport.Transport, syncInterval time.Duration) (ctrl.Manager, error) {
 	options := ctrl.Options{
 		MetricsBindAddress:      fmt.Sprintf("%s:%d", metricsHost, metricsPort),
 		LeaderElection:          true,
@@ -117,8 +114,13 @@ func createManager(leaderElectionNamespace, metricsHost string, metricsPort int3
 		return nil, fmt.Errorf("failed to create a new manager: %w", err)
 	}
 
-	if err := controller.AddDBToTransportSyncers(mgr, postgreSQL, syncService, syncInterval); err != nil {
+	if err := controller.AddDBToTransportSyncers(mgr, postgreSQL, transport, syncInterval); err != nil {
 		return nil, fmt.Errorf("failed to add db syncers: %w", err)
+	}
+
+	err = mgr.Add(transport)
+	if err != nil {
+		return nil, fmt.Errorf("failed to add transport: %w", err)
 	}
 
 	return mgr, nil
