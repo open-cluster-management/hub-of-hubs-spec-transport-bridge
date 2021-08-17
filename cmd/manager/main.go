@@ -16,7 +16,7 @@ import (
 	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/db"
 	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/db/postgresql"
 	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/transport"
-	kafkaClient "github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/transport/kafka-client"
+	kafka "github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/transport/kafka-client"
 	hohSyncService "github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/transport/sync-service"
 	"github.com/operator-framework/operator-sdk/pkg/log/zap"
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
@@ -33,8 +33,8 @@ const (
 	kafkaTransportTypeName             = "kafka"
 	syncServiceTransportTypeName       = "syncservice"
 	envVarControllerNamespace          = "POD_NAMESPACE"
-	envVarTransportSyncInterval        = "HOH_TRANSPORT_SYNC_INTERVAL"
-	envVarTransportComponent           = "HOH_TRANSPORT_TYPE"
+	envVarTransportSyncInterval        = "TRANSPORT_SYNC_INTERVAL"
+	envVarTransportType                = "TRANSPORT_TYPE"
 	leaderElectionLockName             = "hub-of-hubs-spec-transport-bridge-lock"
 )
 
@@ -53,9 +53,9 @@ func printVersion(log logr.Logger) {
 func getTransport(transportType string) (transport.Transport, error) {
 	switch transportType {
 	case kafkaTransportTypeName:
-		kafkaProducer, err := kafkaClient.NewHOHProducer(ctrl.Log.WithName("kafka-client"))
+		kafkaProducer, err := kafka.NewProducer(ctrl.Log.WithName("kafka-client"))
 		if err != nil {
-			return nil, fmt.Errorf("failed to create hoh-kafka-producer: %w", err)
+			return nil, fmt.Errorf("failed to create kafka-producer: %w", err)
 		}
 
 		return kafkaProducer, nil
@@ -90,9 +90,9 @@ func readEnvVars(log logr.Logger) (string, time.Duration, string, error) {
 		return "", 0, "", errEnvVarNotFound
 	}
 
-	transportType, found := os.LookupEnv(envVarTransportComponent)
+	transportType, found := os.LookupEnv(envVarTransportType)
 	if !found {
-		log.Error(nil, "Not found:", "environment variable", envVarTransportComponent)
+		log.Error(nil, "Not found:", "environment variable", envVarTransportType)
 		return "", 0, "", errEnvVarNotFound
 	}
 
