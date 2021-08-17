@@ -113,7 +113,7 @@ func createManager(leaderElectionNamespace, metricsHost string, metricsPort int3
 	if err != nil {
 		return nil, fmt.Errorf("failed to create a new manager: %w", err)
 	}
-	
+
 	if err = mgr.Add(transport); err != nil {
 		return nil, fmt.Errorf("failed to add transport: %w", err)
 	}

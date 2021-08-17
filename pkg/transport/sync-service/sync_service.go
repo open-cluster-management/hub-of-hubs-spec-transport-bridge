@@ -79,9 +79,7 @@ func (s *SyncService) Start(stopChannel <-chan struct{}) error {
 
 	for {
 		<-stopChannel // blocking wait until getting stop event on the stop channel.
-
 		cancelContext()
-
 		s.log.Info("stopped sync service")
 
 		return nil
@@ -99,7 +97,7 @@ func (s *SyncService) SendAsync(id string, msgType string, version string, paylo
 	s.msgChan <- message
 }
 
-// GetVersion returns an empty string if the object doesn't exist or an error occurred.
+// GetVersion returns the version of an object, or an empty string if the object doesn't exist or an error occurred.
 func (s *SyncService) GetVersion(id string, msgType string) string {
 	objectMetadata, err := s.client.GetObjectMetadata(msgType, id)
 	if err != nil {
@@ -122,16 +120,13 @@ func (s *SyncService) distributeMessages(ctx context.Context) {
 				Version:    msg.version,
 			}
 
-			err := s.client.UpdateObject(&metaData)
-			if err != nil {
+			if err := s.client.UpdateObject(&metaData); err != nil {
 				s.log.Error(err, "Failed to update the object in the Cloud Sync Service")
 				continue
 			}
 
 			reader := bytes.NewReader(msg.payload)
-			err = s.client.UpdateObjectData(&metaData, reader)
-
-			if err != nil {
+			if err := s.client.UpdateObjectData(&metaData, reader); err != nil {
 				s.log.Error(err, "Failed to update the object data in the Cloud Sync Service")
 				continue
 			}
