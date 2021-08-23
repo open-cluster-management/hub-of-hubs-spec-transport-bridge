@@ -79,8 +79,8 @@ spec:
               value: "my-cluster-kafka-bootstrap.kafka.svc:9092"
             - name: KAFKA_PRODUCER_TOPIC
               value: "spec-path-topic"
-            - name: KAFKA_SSL_CA
-              value: "$KAFKA_SSL_CA"
+            - name: KAFKA_MESSAGE_SIZE_LIMIT_KB
+              value: "2"
             - name: SYNC_SERVICE_PROTOCOL
               value: "http"
             - name: SYNC_SERVICE_HOST
