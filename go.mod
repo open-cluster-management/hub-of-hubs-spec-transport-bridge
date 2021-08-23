@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/confluentinc/confluent-kafka-go v1.7.0
-	github.com/go-logr/logr v1.0.0
+	github.com/go-logr/logr v0.2.1
 	github.com/go-logr/zapr v0.2.0 // indirect
 	github.com/jackc/pgx/v4 v4.11.0
 	github.com/open-cluster-management/governance-policy-propagator v0.0.0-20210520203318-a78632de1e26
@@ -22,6 +22,5 @@ require (
 )
 
 replace (
-	github.com/go-logr/logr => github.com/go-logr/logr v0.2.1
 	k8s.io/client-go => k8s.io/client-go v0.20.5
 )
