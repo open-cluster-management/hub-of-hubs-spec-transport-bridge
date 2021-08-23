@@ -130,9 +130,6 @@ func doMain() int {
 		return 1
 	}
 
-	transportObj.Start()
-	defer transportObj.Stop()
-
 	mgr, err := createManager(leaderElectionNamespace, metricsHost, metricsPort, postgreSQL, transportObj, syncInterval)
 	if err != nil {
 		log.Error(err, "Failed to create manager")
@@ -161,6 +158,10 @@ func createManager(leaderElectionNamespace, metricsHost string, metricsPort int3
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), options)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create a new manager: %w", err)
+	}
+
+	if err = mgr.Add(transport); err != nil {
+		return nil, fmt.Errorf("failed to add transport: %w", err)
 	}
 
 	if err := controller.AddDBToTransportSyncers(mgr, postgreSQL, transport, syncInterval); err != nil {
