@@ -40,9 +40,8 @@ func (syncer *genericDBToTransportSyncer) Start(stopChannel <-chan struct{}) err
 		select {
 		case <-stopChannel:
 			ticker.Stop()
-
-			syncer.log.Info("stopped syncer", "table", syncer.dbTableName)
 			cancelContext()
+			syncer.log.Info("stopped syncer", "table", syncer.dbTableName)
 
 			return nil
 		case <-ticker.C:
