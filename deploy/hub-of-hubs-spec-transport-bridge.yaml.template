@@ -74,11 +74,13 @@ spec:
             - name: TRANSPORT_TYPE
               value: "$TRANSPORT_TYPE"
             - name: KAFKA_PRODUCER_ID
-              value: "hoh-spec-producer"
+              value: "hub-of-hubs"
             - name: KAFKA_PRODUCER_HOSTS
-              value: "my-cluster-kafka-bootstrap.kafka.svc:9092"
+              value: "kafka-brokers-cluster-kafka-bootstrap.kafka.svc:9092"
             - name: KAFKA_PRODUCER_TOPIC
-              value: "spec-path-topic"
+              value: "spec"
+            - name: KAFKA_PRODUCER_PARTITION
+              value: "0"
             - name: KAFKA_MESSAGE_SIZE_LIMIT_KB
               value: "2"
             - name: SYNC_SERVICE_PROTOCOL
