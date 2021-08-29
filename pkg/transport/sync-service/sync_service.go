@@ -2,11 +2,11 @@ package syncservice
 
 import (
 	"bytes"
-	"context"
 	"errors"
 	"fmt"
 	"os"
 	"strconv"
+	"sync"
 
 	"github.com/go-logr/logr"
 	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/transport"
@@ -34,17 +34,21 @@ func NewSyncService(log logr.Logger) (*SyncService, error) {
 	syncServiceClient.SetAppKeyAndSecret("user@myorg", "")
 
 	return &SyncService{
-		client:  syncServiceClient,
-		msgChan: make(chan *transport.Message),
-		log:     log,
+		client:   syncServiceClient,
+		msgChan:  make(chan *transport.Message),
+		stopChan: make(chan struct{}, 1),
+		log:      log,
 	}, nil
 }
 
 // SyncService abstracts Open Horizon Sync Service usage.
 type SyncService struct {
-	client  *client.SyncServiceClient
-	msgChan chan *transport.Message
-	log     logr.Logger
+	client    *client.SyncServiceClient
+	msgChan   chan *transport.Message
+	stopChan  chan struct{}
+	startOnce sync.Once
+	stopOnce  sync.Once
+	log       logr.Logger
 }
 
 func readEnvVars() (string, string, uint16, error) {
@@ -72,20 +76,17 @@ func readEnvVars() (string, string, uint16, error) {
 }
 
 // Start starts the sync service.
-func (s *SyncService) Start(stopChannel <-chan struct{}) error {
-	ctx, cancelContext := context.WithCancel(context.Background())
-	defer cancelContext()
+func (s *SyncService) Start() {
+	s.startOnce.Do(func() {
+		go s.distributeMessages()
+	})
+}
 
-	go s.distributeMessages(ctx)
-
-	for {
-		<-stopChannel // blocking wait until getting stop event on the stop channel.
-		cancelContext()
-		close(s.msgChan)
-		s.log.Info("stopped sync service")
-
-		return nil
-	}
+// Stop stops the sync service.
+func (s *SyncService) Stop() {
+	s.stopOnce.Do(func() {
+		close(s.stopChan)
+	})
 }
 
 // SendAsync sends a message to the sync service asynchronously.
@@ -99,7 +100,7 @@ func (s *SyncService) SendAsync(id string, msgType string, version string, paylo
 	s.msgChan <- message
 }
 
-// GetVersion returns an empty string if the object doesn't exist or an error occurred.
+// GetVersion returns the version of an object, or an empty string if the object doesn't exist or an error occurred.
 func (s *SyncService) GetVersion(id string, msgType string) string {
 	objectMetadata, err := s.client.GetObjectMetadata(msgType, id)
 	if err != nil {
@@ -109,12 +110,11 @@ func (s *SyncService) GetVersion(id string, msgType string) string {
 	return objectMetadata.Version
 }
 
-func (s *SyncService) distributeMessages(ctx context.Context) {
+func (s *SyncService) distributeMessages() {
 	for {
 		select {
-		case <-ctx.Done():
+		case <-s.stopChan:
 			return
-
 		case msg := <-s.msgChan:
 			metaData := client.ObjectMetaData{
 				ObjectID:   msg.ID,

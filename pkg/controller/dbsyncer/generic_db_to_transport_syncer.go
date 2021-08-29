@@ -63,7 +63,7 @@ func (syncer *genericDBToTransportSyncer) init(ctx context.Context) {
 		syncer.lastUpdateTimestamp = &time.Time{}
 	}
 
-	syncer.log.Info("initialzed syncer", "table", fmt.Sprintf("spec.%s", syncer.dbTableName))
+	syncer.log.Info("initialized syncer", "table", fmt.Sprintf("spec.%s", syncer.dbTableName))
 	syncer.syncBundle(ctx)
 }
 

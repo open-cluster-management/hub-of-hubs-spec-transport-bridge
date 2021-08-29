@@ -16,7 +16,7 @@ import (
 	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/db"
 	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/db/postgresql"
 	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/transport"
-	kafka "github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/transport/kafka-client"
+	kafka "github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/transport/kafka"
 	hohSyncService "github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/transport/sync-service"
 	"github.com/operator-framework/operator-sdk/pkg/log/zap"
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
@@ -53,7 +53,7 @@ func printVersion(log logr.Logger) {
 func getTransport(transportType string) (transport.Transport, error) {
 	switch transportType {
 	case kafkaTransportTypeName:
-		kafkaProducer, err := kafka.NewProducer(ctrl.Log.WithName("kafka-client"))
+		kafkaProducer, err := kafka.NewProducer(ctrl.Log.WithName("kafka"))
 		if err != nil {
 			return nil, fmt.Errorf("failed to create kafka-producer: %w", err)
 		}
@@ -67,33 +67,30 @@ func getTransport(transportType string) (transport.Transport, error) {
 
 		return syncService, nil
 	default:
-		return nil, errEnvVarIllegalValue
+		return nil, fmt.Errorf("%w: %s", errEnvVarIllegalValue, transportType)
 	}
 }
 
-func readEnvVars(log logr.Logger) (string, time.Duration, string, error) {
+func readEnvVars() (string, time.Duration, string, error) {
 	leaderElectionNamespace, found := os.LookupEnv(envVarControllerNamespace)
 	if !found {
-		log.Error(nil, "Not found:", "environment variable", envVarControllerNamespace)
-		return "", 0, "", errEnvVarNotFound
+		return "", 0, "", fmt.Errorf("%w: %s", errEnvVarNotFound, envVarControllerNamespace)
 	}
 
 	syncIntervalString, found := os.LookupEnv(envVarTransportSyncInterval)
 	if !found {
-		log.Error(nil, "Not found:", "environment variable", envVarTransportSyncInterval)
-		return "", 0, "", errEnvVarNotFound
+		return "", 0, "", fmt.Errorf("%w: %s", errEnvVarNotFound, envVarTransportSyncInterval)
 	}
 
 	syncInterval, err := time.ParseDuration(syncIntervalString)
 	if err != nil {
-		log.Error(err, "the environment var ", envVarTransportSyncInterval, " is not valid duration")
-		return "", 0, "", errEnvVarNotFound
+		return "", 0, "", fmt.Errorf("the environment var %s is not a valid duration - %w",
+			envVarTransportSyncInterval, err)
 	}
 
 	transportType, found := os.LookupEnv(envVarTransportType)
 	if !found {
-		log.Error(nil, "Not found:", "environment variable", envVarTransportType)
-		return "", 0, "", errEnvVarNotFound
+		return "", 0, "", fmt.Errorf("%w: %s", errEnvVarNotFound, envVarTransportType)
 	}
 
 	return leaderElectionNamespace, syncInterval, transportType, nil
@@ -110,8 +107,9 @@ func doMain() int {
 
 	printVersion(log)
 
-	leaderElectionNamespace, syncInterval, transportType, err := readEnvVars(log)
+	leaderElectionNamespace, syncInterval, transportType, err := readEnvVars()
 	if err != nil {
+		log.Error(err, "initialization error")
 		return 1
 	}
 	// db layer initialization
@@ -126,9 +124,12 @@ func doMain() int {
 	// transport layer initialization
 	transportObj, err := getTransport(transportType)
 	if err != nil {
-		log.Error(err, "initialization error", "failed to initialize", transportType)
+		log.Error(err, "transport initialization error")
 		return 1
 	}
+
+	transportObj.Start()
+	defer transportObj.Stop()
 
 	mgr, err := createManager(leaderElectionNamespace, metricsHost, metricsPort, postgreSQL, transportObj, syncInterval)
 	if err != nil {
@@ -158,10 +159,6 @@ func createManager(leaderElectionNamespace, metricsHost string, metricsPort int3
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), options)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create a new manager: %w", err)
-	}
-
-	if err = mgr.Add(transport); err != nil {
-		return nil, fmt.Errorf("failed to add transport: %w", err)
 	}
 
 	if err := controller.AddDBToTransportSyncers(mgr, postgreSQL, transport, syncInterval); err != nil {
