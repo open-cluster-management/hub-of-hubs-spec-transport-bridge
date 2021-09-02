@@ -29,7 +29,7 @@ The spec transport bridge component of [Hub-of-Hubs](https://github.com/open-clu
 
 ## Deploy on the hub of hubs
 
-Set the `DATABASE_URL` according to the PostgreSQL URL format: `postgres://YourUserName:YourURLEscapedPassword@YourHostname:5432/YourDatabaseName?sslmode=verify-full`.
+Set the `DATABASE_URL` according to the PostgreSQL URL format: `postgres://YourUserName:YourURLEscapedPassword@YourHostname:5432/YourDatabaseName?sslmode=verify-full&pool_max_conns=YourConnectionPoolSize`.
 
 :exclamation: Remember to URL-escape the password, you can do it in bash:
 
