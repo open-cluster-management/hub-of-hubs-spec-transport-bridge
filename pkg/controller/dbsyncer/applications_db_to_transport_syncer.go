@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	applicationsTableName = "applications"
-	applicationsRuleMessageKey    = "applications"
+	applicationsTableName      = "applications"
+	applicationsRuleMessageKey = "applications"
 )
 
 // AddApplicationsDBToTransportSyncer adds applications db to transport syncer to the manager.

@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	channelsTableName = "channels"
-	channelsRuleMessageKey    = "channels"
+	channelsTableName      = "channels"
+	channelsRuleMessageKey = "channels"
 )
 
 // AddChannelsDBToTransportSyncer adds applications db to transport syncer to the manager.

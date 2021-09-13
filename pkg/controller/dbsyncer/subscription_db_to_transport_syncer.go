@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	subscriptionsTableName = "subscriptions"
-	subscriptionRuleMessageKey    = "subscriptions"
+	subscriptionsTableName     = "subscriptions"
+	subscriptionRuleMessageKey = "subscriptions"
 )
 
 // AddSubscriptionsDBToTransportSyncer adds subscriptions db to transport syncer to the manager.

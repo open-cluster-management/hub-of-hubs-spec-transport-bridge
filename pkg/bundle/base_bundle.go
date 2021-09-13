@@ -1,8 +1,6 @@
 package bundle
 
 import (
-	"fmt"
-
 	datatypes "github.com/open-cluster-management/hub-of-hubs-data-types"
 	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/helpers"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -46,10 +44,9 @@ func (b *baseBundle) manipulate(object metav1.Object) metav1.Object {
 // manipulate name and namespace to avoid collisions of resources with same name on different ns.
 // manipulate objects only if they were created on user namespaces. don't manipulate on hoh-system ns.
 func (b *baseBundle) manipulateNameAndNamespace(object metav1.Object) {
+	// object.SetNamespace(datatypes.HohSystemNamespace)
+	// object.SetName(fmt.Sprintf("%s-hoh-%s", object.GetName(), object.GetNamespace()))
 	if object.GetNamespace() == datatypes.HohSystemNamespace {
 		return
 	}
-
-	object.SetName(fmt.Sprintf("%s-hoh-%s", object.GetName(), object.GetNamespace()))
-	object.SetNamespace(datatypes.HohSystemNamespace)
 }
