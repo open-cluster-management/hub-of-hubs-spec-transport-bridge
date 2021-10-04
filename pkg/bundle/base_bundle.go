@@ -37,6 +37,10 @@ func (b *baseBundle) AddDeletedObject(object metav1.Object) {
 }
 
 func (b *baseBundle) manipulate(object metav1.Object) metav1.Object {
+	if object.GetNamespace() == datatypes.HohSystemNamespace {
+		return object
+	}
+
 	b.manipulateCustomFunc(object)
 	b.manipulateNameAndNamespace(object)
 
