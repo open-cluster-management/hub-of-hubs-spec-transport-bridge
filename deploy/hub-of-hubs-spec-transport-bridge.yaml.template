@@ -73,6 +73,18 @@ spec:
                 secretKeyRef:
                   name: hub-of-hubs-database-transport-bridge-secret
                   key: url
+            - name: TRANSPORT_TYPE
+              value: "$TRANSPORT_TYPE"
+            - name: KAFKA_PRODUCER_ID
+              value: "hub-of-hubs"
+            - name: KAFKA_PRODUCER_HOSTS
+              value: "kafka-brokers-cluster-kafka-bootstrap.kafka.svc:9092"
+            - name: KAFKA_PRODUCER_TOPIC
+              value: "spec"
+            - name: KAFKA_PRODUCER_PARTITION
+              value: "0"
+            - name: KAFKA_MESSAGE_SIZE_LIMIT_KB
+              value: "900"
             - name: SYNC_SERVICE_PROTOCOL
               value: "http"
             - name: SYNC_SERVICE_HOST
