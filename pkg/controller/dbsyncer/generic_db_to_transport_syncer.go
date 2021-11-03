@@ -23,47 +23,41 @@ type genericDBToTransportSyncer struct {
 	dbTableName         string
 	transport           transport.Transport
 	transportBundleKey  string
-	syncInterval        time.Duration
 	lastUpdateTimestamp *time.Time
 	createObjFunc       bundle.CreateObjectFunction
 	createBundleFunc    bundle.CreateBundleFunction
+	intervalPolicy      syncerIntervalPolicy
 }
 
 func (syncer *genericDBToTransportSyncer) Start(stopChannel <-chan struct{}) error {
 	ctx, cancelContext := context.WithCancel(context.Background())
 	defer cancelContext()
 
-	syncer.init(ctx)
-	ticker := time.NewTicker(syncer.syncInterval)
+	syncer.init()
 
-	for {
-		select {
-		case <-stopChannel:
-			ticker.Stop()
-			cancelContext()
-			syncer.log.Info("stopped syncer", "table", syncer.dbTableName)
+	go syncer.syncBundle(ctx)
 
-			return nil
-		case <-ticker.C:
-			go syncer.syncBundle(ctx)
-		}
-	}
+	<-stopChannel // blocking wait for stop event
+	cancelContext()
+	syncer.log.Info("stopped syncer", "table", syncer.dbTableName)
+
+	return nil
 }
 
-func (syncer *genericDBToTransportSyncer) init(ctx context.Context) {
+func (syncer *genericDBToTransportSyncer) init() {
 	// on initialization, we initialize the lastUpdateTimestamp from the transport layer, as this is the last timestamp
 	// that transport bridge sent an update.
 	// later, in SyncBundle, it will check the db if there are newer updates and if yes it will send it with
 	// transport layer and update the lastUpdateTimestamp field accordingly.
 	timestamp := syncer.initLastUpdateTimestampFromTransport()
+
 	if timestamp != nil {
 		syncer.lastUpdateTimestamp = timestamp
 	} else {
 		syncer.lastUpdateTimestamp = &time.Time{}
 	}
 
-	syncer.log.Info("initialzed syncer", "table", fmt.Sprintf("spec.%s", syncer.dbTableName))
-	syncer.syncBundle(ctx)
+	syncer.log.Info("initialized syncer", "table", fmt.Sprintf("spec.%s", syncer.dbTableName))
 }
 
 func (syncer *genericDBToTransportSyncer) initLastUpdateTimestampFromTransport() *time.Time {
@@ -81,28 +75,57 @@ func (syncer *genericDBToTransportSyncer) initLastUpdateTimestampFromTransport()
 }
 
 func (syncer *genericDBToTransportSyncer) syncBundle(ctx context.Context) {
-	lastUpdateTimestamp, err := syncer.db.GetLastUpdateTimestamp(ctx, syncer.dbTableName)
-	if err != nil {
-		syncer.log.Error(err, "unable to sync bundle to leaf hubs", syncer.dbTableName)
-		return
+	currentSyncInterval := syncer.intervalPolicy.getInterval()
+	ticker := time.NewTicker(currentSyncInterval)
+
+	for {
+		select {
+		case <-ctx.Done(): // we have received a signal to stop
+			ticker.Stop()
+			return
+
+		case <-ticker.C:
+			lastUpdateTimestamp, err := syncer.db.GetLastUpdateTimestamp(ctx, syncer.dbTableName)
+			if err != nil {
+				syncer.intervalPolicy.onSyncSkipped()
+				syncer.log.Error(err, "unable to sync bundle to leaf hubs", syncer.dbTableName)
+
+				return
+			}
+
+			if !lastUpdateTimestamp.After(*syncer.lastUpdateTimestamp) { // sync only if something has changed
+				syncer.intervalPolicy.onSyncSkipped()
+
+				return
+			}
+
+			// if we got here, then the last update timestamp from db is after what we have in memory.
+			// this means something has changed in db, syncing to transport.
+			bundleResult := syncer.createBundleFunc()
+			lastUpdateTimestamp, err = syncer.db.GetBundle(ctx, syncer.dbTableName, syncer.createObjFunc, bundleResult)
+
+			if err != nil {
+				syncer.intervalPolicy.onSyncSkipped()
+				syncer.log.Error(err, "unable to sync bundle to leaf hubs", syncer.dbTableName)
+
+				return
+			}
+
+			syncer.lastUpdateTimestamp = lastUpdateTimestamp
+
+			syncer.syncToTransport(syncer.transportBundleKey, datatypes.SpecBundle, lastUpdateTimestamp, bundleResult)
+			syncer.intervalPolicy.onSyncPerformed()
+
+			interval := syncer.intervalPolicy.getInterval()
+
+			// reset ticker if sync interval has changed
+			if interval != currentSyncInterval {
+				currentSyncInterval = interval
+				ticker.Reset(currentSyncInterval)
+				syncer.log.Info(fmt.Sprintf("periodic sync interval has been reset to %s", currentSyncInterval.String()))
+			}
+		}
 	}
-
-	if !lastUpdateTimestamp.After(*syncer.lastUpdateTimestamp) { // sync only if something has changed
-		return
-	}
-	// if we got here, then the last update timestamp from db is after what we have in memory.
-	// this means something has changed in db, syncing to transport.
-	bundleResult := syncer.createBundleFunc()
-	lastUpdateTimestamp, err = syncer.db.GetBundle(ctx, syncer.dbTableName, syncer.createObjFunc, bundleResult)
-
-	if err != nil {
-		syncer.log.Error(err, "unable to sync bundle to leaf hubs", syncer.dbTableName)
-		return
-	}
-
-	syncer.lastUpdateTimestamp = lastUpdateTimestamp
-
-	syncer.syncToTransport(syncer.transportBundleKey, datatypes.SpecBundle, lastUpdateTimestamp, bundleResult)
 }
 
 func (syncer *genericDBToTransportSyncer) syncToTransport(id string, objType string, timestamp *time.Time,

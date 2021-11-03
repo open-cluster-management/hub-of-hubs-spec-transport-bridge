@@ -26,9 +26,9 @@ func AddPlacementBindingsDBToTransportSyncer(mgr ctrl.Manager, db db.HubOfHubsSp
 		dbTableName:        placementBindingsTableName,
 		transport:          transport,
 		transportBundleKey: placementBindingsMsgKey,
-		syncInterval:       syncInterval,
 		createObjFunc:      func() metav1.Object { return &policiesv1.PlacementBinding{} },
 		createBundleFunc:   bundle.NewPlacementBindingBundle,
+		intervalPolicy:     newDefaultSyncerIntervalPolicy(syncInterval),
 	}); err != nil {
 		return fmt.Errorf("failed to add db to transport syncer - %w", err)
 	}

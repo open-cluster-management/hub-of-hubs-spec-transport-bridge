@@ -26,9 +26,9 @@ func AddPoliciesDBToTransportSyncer(mgr ctrl.Manager, db db.HubOfHubsSpecDB, tra
 		dbTableName:        policiesTableName,
 		transport:          transport,
 		transportBundleKey: policiesMsgKey,
-		syncInterval:       syncInterval,
 		createObjFunc:      func() metav1.Object { return &policiesv1.Policy{} },
 		createBundleFunc:   bundle.NewBaseBundle,
+		intervalPolicy:     newDefaultSyncerIntervalPolicy(syncInterval),
 	}); err != nil {
 		return fmt.Errorf("failed to add db to transport syncer - %w", err)
 	}
