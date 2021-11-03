@@ -90,13 +90,13 @@ func (syncer *genericDBToTransportSyncer) syncBundle(ctx context.Context) {
 				syncer.intervalPolicy.onSyncSkipped()
 				syncer.log.Error(err, "unable to sync bundle to leaf hubs", syncer.dbTableName)
 
-				return
+				continue
 			}
 
 			if !lastUpdateTimestamp.After(*syncer.lastUpdateTimestamp) { // sync only if something has changed
 				syncer.intervalPolicy.onSyncSkipped()
 
-				return
+				continue
 			}
 
 			// if we got here, then the last update timestamp from db is after what we have in memory.
@@ -108,7 +108,7 @@ func (syncer *genericDBToTransportSyncer) syncBundle(ctx context.Context) {
 				syncer.intervalPolicy.onSyncSkipped()
 				syncer.log.Error(err, "unable to sync bundle to leaf hubs", syncer.dbTableName)
 
-				return
+				continue
 			}
 
 			syncer.lastUpdateTimestamp = lastUpdateTimestamp
@@ -122,7 +122,7 @@ func (syncer *genericDBToTransportSyncer) syncBundle(ctx context.Context) {
 			if interval != currentSyncInterval {
 				currentSyncInterval = interval
 				ticker.Reset(currentSyncInterval)
-				syncer.log.Info(fmt.Sprintf("periodic sync interval has been reset to %s", currentSyncInterval.String()))
+				syncer.log.Info(fmt.Sprintf("sync interval has been reset to %s", currentSyncInterval.String()))
 			}
 		}
 	}
