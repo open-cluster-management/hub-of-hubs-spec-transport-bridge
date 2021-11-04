@@ -87,14 +87,14 @@ func (syncer *genericDBToTransportSyncer) syncBundle(ctx context.Context) {
 		case <-ticker.C:
 			lastUpdateTimestamp, err := syncer.db.GetLastUpdateTimestamp(ctx, syncer.dbTableName)
 			if err != nil {
-				syncer.adjustTicker(ticker, &currentSyncInterval, false)
+				syncer.adjustInterval(ticker, &currentSyncInterval, false)
 				syncer.log.Error(err, "unable to sync bundle to leaf hubs", syncer.dbTableName)
 
 				continue
 			}
 
 			if !lastUpdateTimestamp.After(*syncer.lastUpdateTimestamp) { // sync only if something has changed
-				syncer.adjustTicker(ticker, &currentSyncInterval, false)
+				syncer.adjustInterval(ticker, &currentSyncInterval, false)
 
 				continue
 			}
@@ -105,7 +105,7 @@ func (syncer *genericDBToTransportSyncer) syncBundle(ctx context.Context) {
 			lastUpdateTimestamp, err = syncer.db.GetBundle(ctx, syncer.dbTableName, syncer.createObjFunc, bundleResult)
 
 			if err != nil {
-				syncer.adjustTicker(ticker, &currentSyncInterval, false)
+				syncer.adjustInterval(ticker, &currentSyncInterval, false)
 				syncer.log.Error(err, "unable to sync bundle to leaf hubs", syncer.dbTableName)
 
 				continue
@@ -114,12 +114,12 @@ func (syncer *genericDBToTransportSyncer) syncBundle(ctx context.Context) {
 			syncer.lastUpdateTimestamp = lastUpdateTimestamp
 
 			syncer.syncToTransport(syncer.transportBundleKey, datatypes.SpecBundle, lastUpdateTimestamp, bundleResult)
-			syncer.adjustTicker(ticker, &currentSyncInterval, true)
+			syncer.adjustInterval(ticker, &currentSyncInterval, true)
 		}
 	}
 }
 
-func (syncer *genericDBToTransportSyncer) adjustTicker(ticker *time.Ticker, currentSyncInterval *time.Duration,
+func (syncer *genericDBToTransportSyncer) adjustInterval(ticker *time.Ticker, currentSyncInterval *time.Duration,
 	syncPerformed bool) {
 	// notify policy whether sync was actually performed or skipped
 	if syncPerformed {
