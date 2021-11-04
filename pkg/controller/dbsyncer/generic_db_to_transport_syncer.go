@@ -87,14 +87,14 @@ func (syncer *genericDBToTransportSyncer) syncBundle(ctx context.Context) {
 		case <-ticker.C:
 			lastUpdateTimestamp, err := syncer.db.GetLastUpdateTimestamp(ctx, syncer.dbTableName)
 			if err != nil {
-				syncer.intervalPolicy.onSyncSkipped()
+				syncer.adjustTicker(ticker, &currentSyncInterval, false)
 				syncer.log.Error(err, "unable to sync bundle to leaf hubs", syncer.dbTableName)
 
 				continue
 			}
 
 			if !lastUpdateTimestamp.After(*syncer.lastUpdateTimestamp) { // sync only if something has changed
-				syncer.intervalPolicy.onSyncSkipped()
+				syncer.adjustTicker(ticker, &currentSyncInterval, false)
 
 				continue
 			}
@@ -105,7 +105,7 @@ func (syncer *genericDBToTransportSyncer) syncBundle(ctx context.Context) {
 			lastUpdateTimestamp, err = syncer.db.GetBundle(ctx, syncer.dbTableName, syncer.createObjFunc, bundleResult)
 
 			if err != nil {
-				syncer.intervalPolicy.onSyncSkipped()
+				syncer.adjustTicker(ticker, &currentSyncInterval, false)
 				syncer.log.Error(err, "unable to sync bundle to leaf hubs", syncer.dbTableName)
 
 				continue
@@ -114,17 +114,28 @@ func (syncer *genericDBToTransportSyncer) syncBundle(ctx context.Context) {
 			syncer.lastUpdateTimestamp = lastUpdateTimestamp
 
 			syncer.syncToTransport(syncer.transportBundleKey, datatypes.SpecBundle, lastUpdateTimestamp, bundleResult)
-			syncer.intervalPolicy.onSyncPerformed()
-
-			interval := syncer.intervalPolicy.getInterval()
-
-			// reset ticker if sync interval has changed
-			if interval != currentSyncInterval {
-				currentSyncInterval = interval
-				ticker.Reset(currentSyncInterval)
-				syncer.log.Info(fmt.Sprintf("sync interval has been reset to %s", currentSyncInterval.String()))
-			}
+			syncer.adjustTicker(ticker, &currentSyncInterval, true)
 		}
+	}
+}
+
+func (syncer *genericDBToTransportSyncer) adjustTicker(ticker *time.Ticker, currentSyncInterval *time.Duration,
+	syncPerformed bool) {
+	// notify policy whether sync was actually performed or skipped
+	if syncPerformed {
+		syncer.intervalPolicy.onSyncPerformed()
+	} else {
+		syncer.intervalPolicy.onSyncSkipped()
+	}
+
+	// get recalculated sync interval
+	interval := syncer.intervalPolicy.getInterval()
+
+	// reset ticker if sync interval has changed
+	if interval != *currentSyncInterval {
+		*currentSyncInterval = interval
+		ticker.Reset(*currentSyncInterval)
+		syncer.log.Info(fmt.Sprintf("sync interval has been reset to %s", currentSyncInterval.String()))
 	}
 }
 
