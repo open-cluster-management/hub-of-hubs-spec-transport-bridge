@@ -38,7 +38,7 @@ func (policy *defaultSyncerIntervalPolicy) onSyncPerformed() {
 
 	policy.numOfConsecutiveSyncs++
 
-	// we've reached maximum number of consecutive sync - increment the interval
+	// we've reached maximum number of consecutive syncs - increment the interval
 	if policy.numOfConsecutiveSyncs == maxNumOfConsecutiveSyncs {
 		policy.floatingInterval *= floatingFactor
 		policy.numOfConsecutiveSyncs = 0
