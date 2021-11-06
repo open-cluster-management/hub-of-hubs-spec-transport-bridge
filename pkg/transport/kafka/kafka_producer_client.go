@@ -3,6 +3,7 @@ package kafka
 import (
 	"encoding/json"
 	"fmt"
+	kafkaHeaderTypes "github.com/open-cluster-management/hub-of-hubs-kafka-transport/types"
 	"sync"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
@@ -93,8 +94,8 @@ func (p *Producer) SendAsync(id string, msgType string, version string, payload 
 	}
 
 	headers := []kafka.Header{
-		{Key: "id", Value: []byte(message.ID)},
-		{Key: "msgType", Value: []byte(message.MsgType)},
+		{Key: kafkaHeaderTypes.MsgIDKey, Value: []byte(message.ID)},
+		{Key: kafkaHeaderTypes.MsgTypeKey, Value: []byte(message.MsgType)},
 	}
 	if err = p.kafkaProducer.ProduceAsync(messageBytes, headers); err != nil {
 		p.log.Error(err, "failed to send message", "message id", message.ID)
