@@ -9,6 +9,7 @@ import (
 	"github.com/go-logr/logr"
 	datatypes "github.com/open-cluster-management/hub-of-hubs-data-types"
 	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/bundle"
+	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/controller/dbsyncer/intervalpolicy"
 	hohDb "github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/db"
 	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/transport"
 )
@@ -26,7 +27,7 @@ type genericDBToTransportSyncer struct {
 	lastUpdateTimestamp *time.Time
 	createObjFunc       bundle.CreateObjectFunction
 	createBundleFunc    bundle.CreateBundleFunction
-	intervalPolicy      syncerIntervalPolicy
+	intervalPolicy      intervalpolicy.SyncerIntervalPolicy
 }
 
 func (syncer *genericDBToTransportSyncer) Start(stopChannel <-chan struct{}) error {
@@ -75,8 +76,7 @@ func (syncer *genericDBToTransportSyncer) initLastUpdateTimestampFromTransport()
 }
 
 func (syncer *genericDBToTransportSyncer) syncBundle(ctx context.Context) {
-	currentSyncInterval := syncer.intervalPolicy.getInterval()
-	ticker := time.NewTicker(currentSyncInterval)
+	ticker := time.NewTicker(syncer.intervalPolicy.GetInterval())
 
 	for {
 		select {
@@ -87,14 +87,14 @@ func (syncer *genericDBToTransportSyncer) syncBundle(ctx context.Context) {
 		case <-ticker.C:
 			lastUpdateTimestamp, err := syncer.db.GetLastUpdateTimestamp(ctx, syncer.dbTableName)
 			if err != nil {
-				syncer.adjustInterval(ticker, &currentSyncInterval, false)
+				syncer.completeSyncIteration(ticker, false)
 				syncer.log.Error(err, "unable to sync bundle to leaf hubs", syncer.dbTableName)
 
 				continue
 			}
 
 			if !lastUpdateTimestamp.After(*syncer.lastUpdateTimestamp) { // sync only if something has changed
-				syncer.adjustInterval(ticker, &currentSyncInterval, false)
+				syncer.completeSyncIteration(ticker, false)
 
 				continue
 			}
@@ -105,7 +105,7 @@ func (syncer *genericDBToTransportSyncer) syncBundle(ctx context.Context) {
 			lastUpdateTimestamp, err = syncer.db.GetBundle(ctx, syncer.dbTableName, syncer.createObjFunc, bundleResult)
 
 			if err != nil {
-				syncer.adjustInterval(ticker, &currentSyncInterval, false)
+				syncer.completeSyncIteration(ticker, false)
 				syncer.log.Error(err, "unable to sync bundle to leaf hubs", syncer.dbTableName)
 
 				continue
@@ -114,28 +114,31 @@ func (syncer *genericDBToTransportSyncer) syncBundle(ctx context.Context) {
 			syncer.lastUpdateTimestamp = lastUpdateTimestamp
 
 			syncer.syncToTransport(syncer.transportBundleKey, datatypes.SpecBundle, lastUpdateTimestamp, bundleResult)
-			syncer.adjustInterval(ticker, &currentSyncInterval, true)
+			syncer.completeSyncIteration(ticker, true)
 		}
 	}
 }
 
-func (syncer *genericDBToTransportSyncer) adjustInterval(ticker *time.Ticker, currentSyncInterval *time.Duration,
-	syncPerformed bool) {
+// completeSyncIteration notifies policy whether sync was actually performed or skipped and resets ticker's interval
+// to a new recalculated one.
+func (syncer *genericDBToTransportSyncer) completeSyncIteration(ticker *time.Ticker, syncPerformed bool) {
+	// get current sync interval
+	currentInterval := syncer.intervalPolicy.GetInterval()
+
 	// notify policy whether sync was actually performed or skipped
 	if syncPerformed {
-		syncer.intervalPolicy.onSyncPerformed()
+		syncer.intervalPolicy.OnSyncPerformed()
 	} else {
-		syncer.intervalPolicy.onSyncSkipped()
+		syncer.intervalPolicy.OnSyncSkipped()
 	}
 
 	// get recalculated sync interval
-	interval := syncer.intervalPolicy.getInterval()
+	recalculatedInterval := syncer.intervalPolicy.GetInterval()
 
-	// reset ticker if sync interval has changed
-	if interval != *currentSyncInterval {
-		*currentSyncInterval = interval
-		ticker.Reset(*currentSyncInterval)
-		syncer.log.Info(fmt.Sprintf("sync interval has been reset to %s", currentSyncInterval.String()))
+	ticker.Reset(recalculatedInterval)
+
+	if currentInterval != recalculatedInterval {
+		syncer.log.Info(fmt.Sprintf("sync interval has been reset to %s", recalculatedInterval.String()))
 	}
 }
 

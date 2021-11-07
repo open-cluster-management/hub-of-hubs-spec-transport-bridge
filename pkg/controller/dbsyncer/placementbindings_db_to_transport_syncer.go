@@ -6,6 +6,7 @@ import (
 
 	policiesv1 "github.com/open-cluster-management/governance-policy-propagator/pkg/apis/policy/v1"
 	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/bundle"
+	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/controller/dbsyncer/intervalpolicy"
 	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/db"
 	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/transport"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,7 +29,7 @@ func AddPlacementBindingsDBToTransportSyncer(mgr ctrl.Manager, db db.HubOfHubsSp
 		transportBundleKey: placementBindingsMsgKey,
 		createObjFunc:      func() metav1.Object { return &policiesv1.PlacementBinding{} },
 		createBundleFunc:   bundle.NewPlacementBindingBundle,
-		intervalPolicy:     newDefaultSyncerIntervalPolicy(syncInterval),
+		intervalPolicy:     intervalpolicy.NewDefaultSyncerIntervalPolicy(syncInterval),
 	}); err != nil {
 		return fmt.Errorf("failed to add db to transport syncer - %w", err)
 	}

@@ -1,4 +1,4 @@
-package dbsyncer
+package intervalpolicy
 
 import (
 	"time"
@@ -10,13 +10,6 @@ const (
 	floatingFactor           = 2
 )
 
-// syncerIntervalPolicy defines a policy to return syncer "floating" interval.
-type syncerIntervalPolicy interface {
-	onSyncPerformed()
-	onSyncSkipped()
-	getInterval() time.Duration
-}
-
 // defaultSyncerIntervalPolicy is a default syncer "floating" interval policy.
 type defaultSyncerIntervalPolicy struct {
 	originalInterval      time.Duration
@@ -25,12 +18,13 @@ type defaultSyncerIntervalPolicy struct {
 	numOfIncrements       int64
 }
 
-func newDefaultSyncerIntervalPolicy(interval time.Duration) *defaultSyncerIntervalPolicy {
+// NewDefaultSyncerIntervalPolicy creates new default syncer interval policy.
+func NewDefaultSyncerIntervalPolicy(interval time.Duration) SyncerIntervalPolicy {
 	return &defaultSyncerIntervalPolicy{originalInterval: interval, floatingInterval: interval}
 }
 
-// onSyncPerformed recalculates floating interval if sync happened.
-func (policy *defaultSyncerIntervalPolicy) onSyncPerformed() {
+// OnSyncPerformed recalculates floating interval if sync happened.
+func (policy *defaultSyncerIntervalPolicy) OnSyncPerformed() {
 	// we've reached maximum number of interval's increments due to consecutive syncs - there is nothing to do
 	if policy.numOfIncrements == maxNumOfIncrements {
 		return
@@ -46,13 +40,14 @@ func (policy *defaultSyncerIntervalPolicy) onSyncPerformed() {
 	}
 }
 
-// onSyncSkipped resets the entire state of the policy if sync was skipped.
-func (policy *defaultSyncerIntervalPolicy) onSyncSkipped() {
+// OnSyncSkipped resets the entire state of the policy if sync was skipped.
+func (policy *defaultSyncerIntervalPolicy) OnSyncSkipped() {
 	policy.numOfConsecutiveSyncs = 0
 	policy.numOfIncrements = 0
 	policy.floatingInterval = policy.originalInterval
 }
 
-func (policy *defaultSyncerIntervalPolicy) getInterval() time.Duration {
+// GetInterval returns recalculated interval bases on the received events.
+func (policy *defaultSyncerIntervalPolicy) GetInterval() time.Duration {
 	return policy.floatingInterval
 }
