@@ -87,14 +87,14 @@ func (syncer *genericDBToTransportSyncer) syncBundle(ctx context.Context) {
 		case <-ticker.C:
 			lastUpdateTimestamp, err := syncer.db.GetLastUpdateTimestamp(ctx, syncer.dbTableName)
 			if err != nil {
-				syncer.completeSyncIteration(ticker, false)
+				syncer.completeIteration(ticker, false)
 				syncer.log.Error(err, "unable to sync bundle to leaf hubs", syncer.dbTableName)
 
 				continue
 			}
 
 			if !lastUpdateTimestamp.After(*syncer.lastUpdateTimestamp) { // sync only if something has changed
-				syncer.completeSyncIteration(ticker, false)
+				syncer.completeIteration(ticker, false)
 
 				continue
 			}
@@ -105,7 +105,7 @@ func (syncer *genericDBToTransportSyncer) syncBundle(ctx context.Context) {
 			lastUpdateTimestamp, err = syncer.db.GetBundle(ctx, syncer.dbTableName, syncer.createObjFunc, bundleResult)
 
 			if err != nil {
-				syncer.completeSyncIteration(ticker, false)
+				syncer.completeIteration(ticker, false)
 				syncer.log.Error(err, "unable to sync bundle to leaf hubs", syncer.dbTableName)
 
 				continue
@@ -114,14 +114,14 @@ func (syncer *genericDBToTransportSyncer) syncBundle(ctx context.Context) {
 			syncer.lastUpdateTimestamp = lastUpdateTimestamp
 
 			syncer.syncToTransport(syncer.transportBundleKey, datatypes.SpecBundle, lastUpdateTimestamp, bundleResult)
-			syncer.completeSyncIteration(ticker, true)
+			syncer.completeIteration(ticker, true)
 		}
 	}
 }
 
-// completeSyncIteration notifies policy whether sync was actually performed or skipped and resets ticker's interval
+// completeIteration notifies policy whether sync was actually performed or skipped and resets ticker's interval
 // to a new recalculated one.
-func (syncer *genericDBToTransportSyncer) completeSyncIteration(ticker *time.Ticker, syncPerformed bool) {
+func (syncer *genericDBToTransportSyncer) completeIteration(ticker *time.Ticker, syncPerformed bool) {
 	// get current sync interval
 	currentInterval := syncer.intervalPolicy.GetInterval()
 
