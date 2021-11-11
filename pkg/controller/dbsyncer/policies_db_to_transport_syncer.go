@@ -6,8 +6,8 @@ import (
 
 	policiesv1 "github.com/open-cluster-management/governance-policy-propagator/pkg/apis/policy/v1"
 	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/bundle"
-	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/controller/dbsyncer/intervalpolicy"
 	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/db"
+	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/intervalpolicy"
 	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/transport"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -29,7 +29,7 @@ func AddPoliciesDBToTransportSyncer(mgr ctrl.Manager, db db.HubOfHubsSpecDB, tra
 		transportBundleKey: policiesMsgKey,
 		createObjFunc:      func() metav1.Object { return &policiesv1.Policy{} },
 		createBundleFunc:   bundle.NewBaseBundle,
-		intervalPolicy:     intervalpolicy.NewDefaultSyncerIntervalPolicy(syncInterval),
+		intervalPolicy:     intervalpolicy.NewExponentialBackoffIntervalPolicy(syncInterval),
 	}); err != nil {
 		return fmt.Errorf("failed to add db to transport syncer - %w", err)
 	}
