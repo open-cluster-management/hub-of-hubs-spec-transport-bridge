@@ -34,8 +34,9 @@ func NewExponentialBackoffIntervalPolicy(interval time.Duration) IntervalPolicy 
 	exponentialBackoff.Reset()
 
 	return &exponentialBackoffIntervalPolicy{
-		exponentialBackoff: exponentialBackoff,
-		interval:           interval,
+		exponentialBackoff:          exponentialBackoff,
+		interval:                    interval,
+		numOfConsecutiveEvaluations: 0,
 	}
 }
 
