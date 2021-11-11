@@ -22,7 +22,7 @@ const (
 func AddPlacementBindingsDBToTransportSyncer(mgr ctrl.Manager, db db.HubOfHubsSpecDB, transport transport.Transport,
 	syncInterval time.Duration) error {
 	if err := mgr.Add(&genericDBToTransportSyncer{
-		log:                ctrl.Log.WithName("policy-db-to-transport-syncer"),
+		log:                ctrl.Log.WithName("placement-bindings-db-to-transport-syncer"),
 		db:                 db,
 		dbTableName:        placementBindingsTableName,
 		transport:          transport,
