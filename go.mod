@@ -3,7 +3,8 @@ module github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge
 go 1.16
 
 require (
-	github.com/cenkalti/backoff/v4 v4.1.2
+	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
+	github.com/cenkalti/backoff/v4 v4.1.3-0.20211111164109-6b0e4ad0cd65
 	github.com/go-logr/logr v0.2.1
 	github.com/go-logr/zapr v0.2.0 // indirect
 	github.com/jackc/pgx/v4 v4.11.0
