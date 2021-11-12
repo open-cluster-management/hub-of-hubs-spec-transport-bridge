@@ -10,6 +10,7 @@ import (
 	datatypes "github.com/open-cluster-management/hub-of-hubs-data-types"
 	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/bundle"
 	hohDb "github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/db"
+	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/intervalpolicy"
 	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/transport"
 )
 
@@ -23,10 +24,10 @@ type genericDBToTransportSyncer struct {
 	dbTableName         string
 	transport           transport.Transport
 	transportBundleKey  string
-	syncInterval        time.Duration
 	lastUpdateTimestamp *time.Time
 	createObjFunc       bundle.CreateObjectFunction
 	createBundleFunc    bundle.CreateBundleFunction
+	intervalPolicy      intervalpolicy.IntervalPolicy
 }
 
 func (syncer *genericDBToTransportSyncer) Start(stopChannel <-chan struct{}) error {
@@ -34,20 +35,14 @@ func (syncer *genericDBToTransportSyncer) Start(stopChannel <-chan struct{}) err
 	defer cancelContext()
 
 	syncer.init(ctx)
-	ticker := time.NewTicker(syncer.syncInterval)
 
-	for {
-		select {
-		case <-stopChannel:
-			ticker.Stop()
-			cancelContext()
-			syncer.log.Info("stopped syncer", "table", syncer.dbTableName)
+	go syncer.periodicSync(ctx)
 
-			return nil
-		case <-ticker.C:
-			go syncer.syncBundle(ctx)
-		}
-	}
+	<-stopChannel // blocking wait for stop event
+	cancelContext()
+	syncer.log.Info("stopped syncer", "table", syncer.dbTableName)
+
+	return nil
 }
 
 func (syncer *genericDBToTransportSyncer) init(ctx context.Context) {
@@ -56,13 +51,14 @@ func (syncer *genericDBToTransportSyncer) init(ctx context.Context) {
 	// later, in SyncBundle, it will check the db if there are newer updates and if yes it will send it with
 	// transport layer and update the lastUpdateTimestamp field accordingly.
 	timestamp := syncer.initLastUpdateTimestampFromTransport()
+
 	if timestamp != nil {
 		syncer.lastUpdateTimestamp = timestamp
 	} else {
 		syncer.lastUpdateTimestamp = &time.Time{}
 	}
 
-	syncer.log.Info("initialzed syncer", "table", fmt.Sprintf("spec.%s", syncer.dbTableName))
+	syncer.log.Info("initialized syncer", "table", fmt.Sprintf("spec.%s", syncer.dbTableName))
 	syncer.syncBundle(ctx)
 }
 
@@ -80,16 +76,19 @@ func (syncer *genericDBToTransportSyncer) initLastUpdateTimestampFromTransport()
 	return &timestamp
 }
 
-func (syncer *genericDBToTransportSyncer) syncBundle(ctx context.Context) {
+// syncBundle performs the actual sync logic and returns true if bundle was committed to transport, otherwise false.
+func (syncer *genericDBToTransportSyncer) syncBundle(ctx context.Context) bool {
 	lastUpdateTimestamp, err := syncer.db.GetLastUpdateTimestamp(ctx, syncer.dbTableName)
 	if err != nil {
 		syncer.log.Error(err, "unable to sync bundle to leaf hubs", syncer.dbTableName)
-		return
+
+		return false
 	}
 
 	if !lastUpdateTimestamp.After(*syncer.lastUpdateTimestamp) { // sync only if something has changed
-		return
+		return false
 	}
+
 	// if we got here, then the last update timestamp from db is after what we have in memory.
 	// this means something has changed in db, syncing to transport.
 	bundleResult := syncer.createBundleFunc()
@@ -97,12 +96,48 @@ func (syncer *genericDBToTransportSyncer) syncBundle(ctx context.Context) {
 
 	if err != nil {
 		syncer.log.Error(err, "unable to sync bundle to leaf hubs", syncer.dbTableName)
-		return
+
+		return false
 	}
 
 	syncer.lastUpdateTimestamp = lastUpdateTimestamp
-
 	syncer.syncToTransport(syncer.transportBundleKey, datatypes.SpecBundle, lastUpdateTimestamp, bundleResult)
+
+	return true
+}
+
+func (syncer *genericDBToTransportSyncer) periodicSync(ctx context.Context) {
+	ticker := time.NewTicker(syncer.intervalPolicy.GetInterval())
+
+	for {
+		select {
+		case <-ctx.Done(): // we have received a signal to stop
+			ticker.Stop()
+			return
+
+		case <-ticker.C:
+			synced := syncer.syncBundle(ctx)
+
+			// get current sync interval
+			currentInterval := syncer.intervalPolicy.GetInterval()
+
+			// notify policy whether sync was actually performed or skipped
+			if synced {
+				syncer.intervalPolicy.Evaluate()
+			} else {
+				syncer.intervalPolicy.Reset()
+			}
+
+			// get reevaluated sync interval
+			reevaluatedInterval := syncer.intervalPolicy.GetInterval()
+
+			// reset ticker if needed
+			if currentInterval != reevaluatedInterval {
+				ticker.Reset(reevaluatedInterval)
+				syncer.log.Info(fmt.Sprintf("sync interval has been reset to %s", reevaluatedInterval.String()))
+			}
+		}
+	}
 }
 
 func (syncer *genericDBToTransportSyncer) syncToTransport(id string, objType string, timestamp *time.Time,
