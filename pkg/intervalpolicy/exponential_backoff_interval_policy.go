@@ -7,16 +7,16 @@ import (
 )
 
 const (
-	baseFactor                                      = 2
-	maxInterval                                     = 60 * time.Second
-	maxNumOfConsecutiveEvaluationsBeforeNextBackoff = 3
+	baseFactor                              = 2
+	maxInterval                             = 60 * time.Second
+	consecutiveEvaluationsBeforeNextBackoff = 3
 )
 
 // exponentialBackoffIntervalPolicy is a default interval policy.
 type exponentialBackoffIntervalPolicy struct {
 	exponentialBackoff          *backoff.ExponentialBackOff
 	interval                    time.Duration
-	numOfConsecutiveEvaluations int
+	consecutiveEvaluationsCount int
 }
 
 // NewExponentialBackoffIntervalPolicy creates new exponential backoff interval policy.
@@ -35,26 +35,26 @@ func NewExponentialBackoffIntervalPolicy(interval time.Duration) IntervalPolicy 
 
 	return &exponentialBackoffIntervalPolicy{
 		exponentialBackoff:          exponentialBackoff,
-		interval:                    interval,
-		numOfConsecutiveEvaluations: 0,
+		interval:                    exponentialBackoff.NextBackOff(), // after reset, next returns initial interval
+		consecutiveEvaluationsCount: 0,
 	}
 }
 
-// Evaluate reevaluates interval.
+// Evaluate reevaluates the interval.
 func (policy *exponentialBackoffIntervalPolicy) Evaluate() {
-	policy.numOfConsecutiveEvaluations++
+	policy.consecutiveEvaluationsCount++
 
-	if policy.numOfConsecutiveEvaluations == maxNumOfConsecutiveEvaluationsBeforeNextBackoff {
+	if policy.consecutiveEvaluationsCount == consecutiveEvaluationsBeforeNextBackoff {
 		policy.interval = policy.exponentialBackoff.NextBackOff()
-		policy.numOfConsecutiveEvaluations = 0
+		policy.consecutiveEvaluationsCount = 0
 	}
 }
 
 // Reset resets the entire state of the policy.
 func (policy *exponentialBackoffIntervalPolicy) Reset() {
 	policy.exponentialBackoff.Reset()
-	policy.interval = policy.exponentialBackoff.InitialInterval
-	policy.numOfConsecutiveEvaluations = 0
+	policy.interval = policy.exponentialBackoff.NextBackOff() // after reset, next returns initial interval
+	policy.consecutiveEvaluationsCount = 0
 }
 
 // GetInterval returns reevaluated interval.
