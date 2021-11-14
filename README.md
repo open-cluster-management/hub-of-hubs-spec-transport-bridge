@@ -3,6 +3,7 @@
 # Hub-of-Hubs Spec Transport Bridge
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge)](https://goreportcard.com/report/github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge)
+[![Go Reference](https://pkg.go.dev/badge/github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge.svg)](https://pkg.go.dev/github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge)
 [![License](https://img.shields.io/github/license/open-cluster-management/hub-of-hubs-spec-transport-bridge)](/LICENSE)
 
 The spec transport bridge component of [Hub-of-Hubs](https://github.com/open-cluster-management/hub-of-hubs).
