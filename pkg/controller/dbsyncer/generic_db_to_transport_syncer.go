@@ -39,7 +39,6 @@ func (syncer *genericDBToTransportSyncer) Start(stopChannel <-chan struct{}) err
 	go syncer.periodicSync(ctx)
 
 	<-stopChannel // blocking wait for stop event
-	cancelContext()
 	syncer.log.Info("stopped syncer", "table", syncer.dbTableName)
 
 	return nil
