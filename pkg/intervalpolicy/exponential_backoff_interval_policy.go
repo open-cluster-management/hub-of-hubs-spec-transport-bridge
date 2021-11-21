@@ -61,3 +61,8 @@ func (policy *exponentialBackoffIntervalPolicy) Reset() {
 func (policy *exponentialBackoffIntervalPolicy) GetInterval() time.Duration {
 	return policy.interval
 }
+
+// GetMaxInterval returns the max interval that can be used to sync bundles.
+func (policy *exponentialBackoffIntervalPolicy) GetMaxInterval() time.Duration {
+	return maxInterval
+}

@@ -115,7 +115,10 @@ func (syncer *genericDBToTransportSyncer) periodicSync(ctx context.Context) {
 			return
 
 		case <-ticker.C:
-			synced := syncer.syncBundle(ctx)
+			// define timeout of max sync interval on the sync function
+			ctxWithTimeout, cancelFunc := context.WithTimeout(ctx, syncer.intervalPolicy.GetMaxInterval())
+			synced := syncer.syncBundle(ctxWithTimeout)
+			cancelFunc() // cancel child ctx and is used to cleanup resources once context expires or sync is done.
 
 			// get current sync interval
 			currentInterval := syncer.intervalPolicy.GetInterval()

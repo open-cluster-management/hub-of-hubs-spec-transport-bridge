@@ -10,4 +10,6 @@ type IntervalPolicy interface {
 	Reset()
 	// GetInterval returns current interval.
 	GetInterval() time.Duration
+	// GetMaxInterval returns the max interval that can be used to sync bundles.
+	GetMaxInterval() time.Duration
 }
