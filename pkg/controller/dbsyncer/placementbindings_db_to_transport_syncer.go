@@ -19,7 +19,7 @@ const (
 )
 
 // AddPlacementBindingsDBToTransportSyncer adds placement bindings db to transport syncer to the manager.
-func AddPlacementBindingsDBToTransportSyncer(mgr ctrl.Manager, db db.HubOfHubsSpecDB, transport transport.Transport,
+func AddPlacementBindingsDBToTransportSyncer(mgr ctrl.Manager, db db.SpecDB, transport transport.Transport,
 	syncInterval time.Duration) error {
 	if err := mgr.Add(&genericDBToTransportSyncer{
 		log:                ctrl.Log.WithName("placement-bindings-db-to-transport-syncer"),
@@ -31,7 +31,7 @@ func AddPlacementBindingsDBToTransportSyncer(mgr ctrl.Manager, db db.HubOfHubsSp
 		createBundleFunc:   bundle.NewPlacementBindingBundle,
 		intervalPolicy:     intervalpolicy.NewExponentialBackoffIntervalPolicy(syncInterval),
 	}); err != nil {
-		return fmt.Errorf("failed to add db to transport syncer - %w", err)
+		return fmt.Errorf("failed to add placement bindings db to transport syncer - %w", err)
 	}
 
 	return nil

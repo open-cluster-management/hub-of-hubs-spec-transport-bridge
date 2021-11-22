@@ -86,6 +86,7 @@ func (s *SyncService) Stop() {
 	s.stopOnce.Do(func() {
 		s.stopChan <- struct{}{}
 		close(s.stopChan)
+		close(s.msgChan)
 	})
 }
 

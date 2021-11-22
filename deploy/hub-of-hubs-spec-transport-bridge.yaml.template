@@ -79,7 +79,7 @@ spec:
               value: "$SYNC_SERVICE_HOST"
             - name: SYNC_SERVICE_PORT
               value: "$SYNC_SERVICE_PORT"
-            - name: HOH_TRANSPORT_SYNC_INTERVAL
+            - name: SYNC_INTERVAL
               value: 5s
             - name: POD_NAMESPACE
               valueFrom:

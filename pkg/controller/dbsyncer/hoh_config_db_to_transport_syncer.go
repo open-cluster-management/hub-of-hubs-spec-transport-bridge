@@ -19,7 +19,7 @@ const (
 )
 
 // AddHoHConfigDBToTransportSyncer adds hub-of-hubs config db to transport syncer to the manager.
-func AddHoHConfigDBToTransportSyncer(mgr ctrl.Manager, db db.HubOfHubsSpecDB, transport transport.Transport,
+func AddHoHConfigDBToTransportSyncer(mgr ctrl.Manager, db db.SpecDB, transport transport.Transport,
 	syncInterval time.Duration) error {
 	if err := mgr.Add(&genericDBToTransportSyncer{
 		log:                ctrl.Log.WithName("hoh-config-db-to-transport-syncer"),
@@ -31,7 +31,7 @@ func AddHoHConfigDBToTransportSyncer(mgr ctrl.Manager, db db.HubOfHubsSpecDB, tr
 		createBundleFunc:   bundle.NewBaseBundle,
 		intervalPolicy:     intervalpolicy.NewExponentialBackoffIntervalPolicy(syncInterval),
 	}); err != nil {
-		return fmt.Errorf("failed to add db to transport syncer - %w", err)
+		return fmt.Errorf("failed to add config db to transport syncer - %w", err)
 	}
 
 	return nil

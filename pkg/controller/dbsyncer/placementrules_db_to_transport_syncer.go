@@ -19,7 +19,7 @@ const (
 )
 
 // AddPlacementRulesDBToTransportSyncer adds placement rules db to transport syncer to the manager.
-func AddPlacementRulesDBToTransportSyncer(mgr ctrl.Manager, db db.HubOfHubsSpecDB, transport transport.Transport,
+func AddPlacementRulesDBToTransportSyncer(mgr ctrl.Manager, db db.SpecDB, transport transport.Transport,
 	syncInterval time.Duration) error {
 	if err := mgr.Add(&genericDBToTransportSyncer{
 		log:                ctrl.Log.WithName("placement-rules-db-to-transport-syncer"),
@@ -31,7 +31,7 @@ func AddPlacementRulesDBToTransportSyncer(mgr ctrl.Manager, db db.HubOfHubsSpecD
 		createBundleFunc:   bundle.NewBaseBundle,
 		intervalPolicy:     intervalpolicy.NewExponentialBackoffIntervalPolicy(syncInterval),
 	}); err != nil {
-		return fmt.Errorf("failed to add db to transport syncer - %w", err)
+		return fmt.Errorf("failed to add placement rules db to transport syncer - %w", err)
 	}
 
 	return nil

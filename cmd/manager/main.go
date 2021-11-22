@@ -26,11 +26,11 @@ import (
 )
 
 const (
-	metricsHost                       = "0.0.0.0"
-	metricsPort                 int32 = 8965
-	envVarControllerNamespace         = "POD_NAMESPACE"
-	envVarTransportSyncInterval       = "HOH_TRANSPORT_SYNC_INTERVAL"
-	leaderElectionLockName            = "hub-of-hubs-spec-transport-bridge-lock"
+	metricsHost                     = "0.0.0.0"
+	metricsPort               int32 = 8965
+	envVarControllerNamespace       = "POD_NAMESPACE"
+	envVarSyncInterval              = "SYNC_INTERVAL"
+	leaderElectionLockName          = "hub-of-hubs-spec-transport-bridge-lock"
 )
 
 func printVersion(log logr.Logger) {
@@ -56,15 +56,15 @@ func doMain() int {
 		return 1
 	}
 
-	syncIntervalString, found := os.LookupEnv(envVarTransportSyncInterval)
+	syncIntervalString, found := os.LookupEnv(envVarSyncInterval)
 	if !found {
-		log.Error(nil, "Not found:", "environment variable", envVarTransportSyncInterval)
+		log.Error(nil, "Not found:", "environment variable", envVarSyncInterval)
 		return 1
 	}
 
 	syncInterval, err := time.ParseDuration(syncIntervalString)
 	if err != nil {
-		log.Error(err, "the environment var ", envVarTransportSyncInterval, " is not valid duration")
+		log.Error(err, "the environment var ", envVarSyncInterval, " is not valid duration")
 		return 1
 	}
 
@@ -103,7 +103,7 @@ func doMain() int {
 	return 0
 }
 
-func createManager(leaderElectionNamespace, metricsHost string, metricsPort int32, postgreSQL db.HubOfHubsSpecDB,
+func createManager(leaderElectionNamespace, metricsHost string, metricsPort int32, postgreSQL db.SpecDB,
 	syncService transport.Transport, syncInterval time.Duration) (ctrl.Manager, error) {
 	options := ctrl.Options{
 		MetricsBindAddress:      fmt.Sprintf("%s:%d", metricsHost, metricsPort),

@@ -9,7 +9,7 @@ import (
 	"github.com/go-logr/logr"
 	datatypes "github.com/open-cluster-management/hub-of-hubs-data-types"
 	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/bundle"
-	hohDb "github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/db"
+	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/db"
 	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/intervalpolicy"
 	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/transport"
 )
@@ -20,7 +20,7 @@ const (
 
 type genericDBToTransportSyncer struct {
 	log                 logr.Logger
-	db                  hohDb.HubOfHubsSpecDB
+	db                  db.SpecDB
 	dbTableName         string
 	transport           transport.Transport
 	transportBundleKey  string

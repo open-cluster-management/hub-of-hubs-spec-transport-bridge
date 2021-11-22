@@ -11,9 +11,9 @@ import (
 )
 
 // AddDBToTransportSyncers adds the controllers that send info from DB to transport layer to the Manager.
-func AddDBToTransportSyncers(mgr ctrl.Manager, specDB db.HubOfHubsSpecDB, specTransport transport.Transport,
+func AddDBToTransportSyncers(mgr ctrl.Manager, specDB db.SpecDB, specTransport transport.Transport,
 	syncInterval time.Duration) error {
-	addDBSyncerFunctions := []func(ctrl.Manager, db.HubOfHubsSpecDB, transport.Transport,
+	addDBSyncerFunctions := []func(ctrl.Manager, db.SpecDB, transport.Transport,
 		time.Duration) error{
 		dbsyncer.AddHoHConfigDBToTransportSyncer,
 		dbsyncer.AddPoliciesDBToTransportSyncer,
