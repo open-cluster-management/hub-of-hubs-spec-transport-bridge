@@ -84,7 +84,7 @@ spec:
             - name: KAFKA_PRODUCER_PARTITION
               value: "0"
             - name: KAFKA_MESSAGE_SIZE_LIMIT_KB
-              value: "900"
+              value: "940"
             - name: SYNC_SERVICE_PROTOCOL
               value: "http"
             - name: SYNC_SERVICE_HOST
@@ -92,7 +92,7 @@ spec:
             - name: SYNC_SERVICE_PORT
               value: "$SYNC_SERVICE_PORT"
             - name: HOH_TRANSPORT_SYNC_INTERVAL
-              value: 5s
+              value: 30s
             - name: POD_NAMESPACE
               valueFrom:
                 fieldRef:

@@ -31,7 +31,7 @@ const (
 	metricsHost                        = "0.0.0.0"
 	metricsPort                  int32 = 8965
 	kafkaTransportTypeName             = "kafka"
-	syncServiceTransportTypeName       = "syncservice"
+	syncServiceTransportTypeName       = "sync-service"
 	envVarControllerNamespace          = "POD_NAMESPACE"
 	envVarTransportSyncInterval        = "HOH_TRANSPORT_SYNC_INTERVAL"
 	envVarTransportType                = "TRANSPORT_TYPE"

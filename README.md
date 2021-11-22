@@ -54,11 +54,11 @@ python -c "import sys, urllib as ul; print ul.quote_plus(sys.argv[1])" 'YourPass
     $ export IMAGE=$REGISTRY/$(basename $(pwd)):latest
     ```
 
-1. Set the `TRANSPORT_TYPE` environment variable to "kafka" or "syncservice" to set which transport to use.
+1. Set the `TRANSPORT_TYPE` environment variable to "kafka" or "sync-service" to set which transport to use.
     ```
     $ export TRANSPORT_TYPE=...
     ```
-1. If you chose Kafka for transport, set the following environment variables:
+1. If you set Kafka for transport, set the following environment variables:
 
     1. If you use secured (SSL/TLS) client authorization, set `KAFKA_SSL_CA` environment variable to hold the
        certificate (PEM format) encoded in base64.
@@ -66,7 +66,7 @@ python -c "import sys, urllib as ul; print ul.quote_plus(sys.argv[1])" 'YourPass
         $ export KAFKA_SSL_CA=$(cat PATH_TO_CA | base64 -w 0)
         ```
 
-1. Otherwise, if you chose Sync-Service as transport, set the following:
+1. Otherwise, if you set Sync-Service as transport, set the following:
 
     1. Set the `SYNC_SERVICE_HOST` environment variable to hold the CSS host.
         ```
