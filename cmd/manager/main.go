@@ -87,7 +87,7 @@ func doMain() int {
 	syncService.Start()
 	defer syncService.Stop()
 
-	mgr, err := createManager(leaderElectionNamespace, metricsHost, metricsPort, postgreSQL, syncService, syncInterval)
+	mgr, err := createManager(leaderElectionNamespace, postgreSQL, syncService, syncInterval)
 	if err != nil {
 		log.Error(err, "Failed to create manager")
 		return 1
@@ -103,8 +103,8 @@ func doMain() int {
 	return 0
 }
 
-func createManager(leaderElectionNamespace, metricsHost string, metricsPort int32, postgreSQL db.SpecDB,
-	syncService transport.Transport, syncInterval time.Duration) (ctrl.Manager, error) {
+func createManager(leaderElectionNamespace string, postgreSQL db.SpecDB, syncService transport.Transport,
+	syncInterval time.Duration) (ctrl.Manager, error) {
 	options := ctrl.Options{
 		MetricsBindAddress:      fmt.Sprintf("%s:%d", metricsHost, metricsPort),
 		LeaderElection:          true,
