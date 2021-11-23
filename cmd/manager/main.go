@@ -17,7 +17,7 @@ import (
 	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/db"
 	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/db/postgresql"
 	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/transport"
-	hohSyncService "github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/transport/sync-service"
+	syncservice "github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/transport/sync-service"
 	"github.com/operator-framework/operator-sdk/pkg/log/zap"
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
 	"github.com/spf13/pflag"
@@ -58,7 +58,7 @@ func getTransport(transportType string, transportMsgCompressorType string) (tran
 
 	switch transportType {
 	case syncServiceTransportTypeName:
-		syncService, err := hohSyncService.NewSyncService(msgCompressor, ctrl.Log.WithName("sync-service"))
+		syncService, err := syncservice.NewSyncService(msgCompressor, ctrl.Log.WithName("sync-service"))
 		if err != nil {
 			return nil, fmt.Errorf("failed to create sync-service: %w", err)
 		}
