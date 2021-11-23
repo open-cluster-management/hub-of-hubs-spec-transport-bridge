@@ -31,11 +31,11 @@ import (
 const (
 	metricsHost                             = "0.0.0.0"
 	metricsPort                       int32 = 8965
-	kafkaTransportTypeName                  = "kafka"
-	syncServiceTransportTypeName            = "sync-service"
 	envVarControllerNamespace               = "POD_NAMESPACE"
 	envVarTransportMsgCompressionType       = "TRANSPORT_MESSAGE_COMPRESSION_TYPE"
 	envVarTransportType                     = "TRANSPORT_TYPE"
+	kafkaTransportTypeName                  = "kafka"
+	syncServiceTransportTypeName            = "sync-service"
 	envVarSyncInterval                      = "SYNC_INTERVAL"
 	leaderElectionLockName                  = "hub-of-hubs-spec-transport-bridge-lock"
 )

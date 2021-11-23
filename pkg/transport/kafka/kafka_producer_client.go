@@ -69,8 +69,8 @@ func (p *Producer) deliveryHandler(kafkaEvent *kafka.Event) {
 			}
 
 			p.log.Error(event.TopicPartition.Error, "failed to deliver message",
-				"message id", message.ID, "message type", message.MsgType, "message version", message.Version,
-				"topic-partition", event.TopicPartition)
+				"message id", message.ID, "message type", message.MsgType, "message version",
+				message.Version, "topic-partition", event.TopicPartition)
 		}
 	default:
 		p.log.Info("received unsupported kafka-event type", "event type", event)
@@ -88,7 +88,6 @@ func (p *Producer) Start() {
 func (p *Producer) Stop() {
 	p.stopOnce.Do(func() {
 		p.stopChan <- struct{}{}
-
 		p.kafkaProducer.Close()
 		close(p.deliveryChan)
 		close(p.stopChan)
@@ -106,8 +105,8 @@ func (p *Producer) SendAsync(id string, msgType string, version string, payload 
 
 	messageBytes, err := json.Marshal(message)
 	if err != nil {
-		p.log.Error(err, "failed to send message", "message id", message.ID, "message type", message.MsgType,
-			"message version", message.Version)
+		p.log.Error(err, "failed to send message", "message id", message.ID, "message type",
+			message.MsgType, "message version", message.Version)
 
 		return
 	}
@@ -127,8 +126,8 @@ func (p *Producer) SendAsync(id string, msgType string, version string, payload 
 	}
 
 	if err = p.kafkaProducer.ProduceAsync(message.ID, p.topic, partition, headers, compressedBytes); err != nil {
-		p.log.Error(err, "failed to send message", "message id", message.ID, "message type", message.MsgType,
-			"message version", message.Version)
+		p.log.Error(err, "failed to send message", "message id", message.ID, "message type",
+			message.MsgType, "message version", message.Version)
 	}
 }
 
