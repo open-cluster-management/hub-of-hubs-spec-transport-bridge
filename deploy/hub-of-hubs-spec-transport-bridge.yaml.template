@@ -81,7 +81,7 @@ spec:
               value: "hub-of-hubs"
             - name: KAFKA_BOOTSTRAP_SERVERS
               value: "kafka-brokers-cluster-kafka-bootstrap.kafka.svc:9092"
-            - name: KAFKA_PRODUCER_TOPIC
+            - name: KAFKA_TOPIC
               value: "spec"
             - name: KAFKA_MESSAGE_SIZE_LIMIT_KB
               value: "940"
