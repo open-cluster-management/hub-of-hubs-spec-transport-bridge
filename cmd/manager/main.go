@@ -4,6 +4,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -11,11 +12,13 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	compressor "github.com/open-cluster-management/hub-of-hubs-message-compression"
 	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/controller"
 	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/db"
 	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/db/postgresql"
 	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/transport"
-	hohSyncService "github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/transport/sync-service"
+	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/transport/kafka"
+	syncservice "github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/transport/sync-service"
 	"github.com/operator-framework/operator-sdk/pkg/log/zap"
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
 	"github.com/spf13/pflag"
@@ -26,17 +29,84 @@ import (
 )
 
 const (
-	metricsHost                       = "0.0.0.0"
-	metricsPort                 int32 = 8965
-	envVarControllerNamespace         = "POD_NAMESPACE"
-	envVarTransportSyncInterval       = "HOH_TRANSPORT_SYNC_INTERVAL"
-	leaderElectionLockName            = "hub-of-hubs-spec-transport-bridge-lock"
+	metricsHost                             = "0.0.0.0"
+	metricsPort                       int32 = 8965
+	kafkaTransportTypeName                  = "kafka"
+	syncServiceTransportTypeName            = "sync-service"
+	envVarControllerNamespace               = "POD_NAMESPACE"
+	envVarTransportMsgCompressionType       = "TRANSPORT_MESSAGE_COMPRESSION_TYPE"
+	envVarTransportType                     = "TRANSPORT_TYPE"
+	envVarSyncInterval                      = "SYNC_INTERVAL"
+	leaderElectionLockName                  = "hub-of-hubs-spec-transport-bridge-lock"
+)
+
+var (
+	errEnvVarNotFound     = errors.New("environment variable not found")
+	errEnvVarIllegalValue = errors.New("environment variable illegal value")
 )
 
 func printVersion(log logr.Logger) {
 	log.Info(fmt.Sprintf("Go Version: %s", runtime.Version()))
 	log.Info(fmt.Sprintf("Go OS/Arch: %s/%s", runtime.GOOS, runtime.GOARCH))
 	log.Info(fmt.Sprintf("Version of operator-sdk: %v", sdkVersion.Version))
+}
+
+// function to choose transport type based on env var.
+func getTransport(transportType string, transportMsgCompressorType string) (transport.Transport, error) {
+	msgCompressor, err := compressor.NewCompressor(compressor.CompressionType(transportMsgCompressorType))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create message-compressor: %w", err)
+	}
+
+	switch transportType {
+	case kafkaTransportTypeName:
+		kafkaProducer, err := kafka.NewProducer(msgCompressor, ctrl.Log.WithName("kafka"))
+		if err != nil {
+			return nil, fmt.Errorf("failed to create kafka-producer: %w", err)
+		}
+
+		return kafkaProducer, nil
+	case syncServiceTransportTypeName:
+		syncService, err := syncservice.NewSyncService(msgCompressor, ctrl.Log.WithName("sync-service"))
+		if err != nil {
+			return nil, fmt.Errorf("failed to create sync-service: %w", err)
+		}
+
+		return syncService, nil
+	default:
+		return nil, fmt.Errorf("%w: %s - %s is not a valid option", errEnvVarIllegalValue, envVarTransportType,
+			transportType)
+	}
+}
+
+func readEnvVars() (string, time.Duration, string, string, error) {
+	leaderElectionNamespace, found := os.LookupEnv(envVarControllerNamespace)
+	if !found {
+		return "", 0, "", "", fmt.Errorf("%w: %s", errEnvVarNotFound, envVarControllerNamespace)
+	}
+
+	syncIntervalString, found := os.LookupEnv(envVarSyncInterval)
+	if !found {
+		return "", 0, "", "", fmt.Errorf("%w: %s", errEnvVarNotFound, envVarSyncInterval)
+	}
+
+	syncInterval, err := time.ParseDuration(syncIntervalString)
+	if err != nil {
+		return "", 0, "", "", fmt.Errorf("the environment var %s is not a valid duration - %w",
+			envVarSyncInterval, err)
+	}
+
+	transportType, found := os.LookupEnv(envVarTransportType)
+	if !found {
+		return "", 0, "", "", fmt.Errorf("%w: %s", errEnvVarNotFound, envVarTransportType)
+	}
+
+	transportMsgCompressionType, found := os.LookupEnv(envVarTransportMsgCompressionType)
+	if !found {
+		return "", 0, "", "", fmt.Errorf("%w: %s", errEnvVarNotFound, envVarTransportMsgCompressionType)
+	}
+
+	return leaderElectionNamespace, syncInterval, transportType, transportMsgCompressionType, nil
 }
 
 // function to handle defers with exit, see https://stackoverflow.com/a/27629493/553720.
@@ -50,21 +120,9 @@ func doMain() int {
 
 	printVersion(log)
 
-	leaderElectionNamespace, found := os.LookupEnv(envVarControllerNamespace)
-	if !found {
-		log.Error(nil, "Not found:", "environment variable", envVarControllerNamespace)
-		return 1
-	}
-
-	syncIntervalString, found := os.LookupEnv(envVarTransportSyncInterval)
-	if !found {
-		log.Error(nil, "Not found:", "environment variable", envVarTransportSyncInterval)
-		return 1
-	}
-
-	syncInterval, err := time.ParseDuration(syncIntervalString)
+	leaderElectionNamespace, syncInterval, transportType, transportMsgCompressionType, err := readEnvVars()
 	if err != nil {
-		log.Error(err, "the environment var ", envVarTransportSyncInterval, " is not valid duration")
+		log.Error(err, "initialization error")
 		return 1
 	}
 
@@ -78,16 +136,16 @@ func doMain() int {
 	defer postgreSQL.Stop()
 
 	// transport layer initialization
-	syncService, err := hohSyncService.NewSyncService(ctrl.Log.WithName("sync-service"))
+	transportObj, err := getTransport(transportType, transportMsgCompressionType)
 	if err != nil {
-		log.Error(err, "initialization error", "failed to initialize", "SyncService")
+		log.Error(err, "transport initialization error")
 		return 1
 	}
 
-	syncService.Start()
-	defer syncService.Stop()
+	transportObj.Start()
+	defer transportObj.Stop()
 
-	mgr, err := createManager(leaderElectionNamespace, metricsHost, metricsPort, postgreSQL, syncService, syncInterval)
+	mgr, err := createManager(leaderElectionNamespace, postgreSQL, transportObj, syncInterval)
 	if err != nil {
 		log.Error(err, "Failed to create manager")
 		return 1
@@ -103,8 +161,8 @@ func doMain() int {
 	return 0
 }
 
-func createManager(leaderElectionNamespace, metricsHost string, metricsPort int32, postgreSQL db.HubOfHubsSpecDB,
-	syncService transport.Transport, syncInterval time.Duration) (ctrl.Manager, error) {
+func createManager(leaderElectionNamespace string, postgreSQL db.SpecDB, transportObj transport.Transport,
+	syncInterval time.Duration) (ctrl.Manager, error) {
 	options := ctrl.Options{
 		MetricsBindAddress:      fmt.Sprintf("%s:%d", metricsHost, metricsPort),
 		LeaderElection:          true,
@@ -117,7 +175,7 @@ func createManager(leaderElectionNamespace, metricsHost string, metricsPort int3
 		return nil, fmt.Errorf("failed to create a new manager: %w", err)
 	}
 
-	if err := controller.AddDBToTransportSyncers(mgr, postgreSQL, syncService, syncInterval); err != nil {
+	if err := controller.AddDBToTransportSyncers(mgr, postgreSQL, transportObj, syncInterval); err != nil {
 		return nil, fmt.Errorf("failed to add db syncers: %w", err)
 	}
 

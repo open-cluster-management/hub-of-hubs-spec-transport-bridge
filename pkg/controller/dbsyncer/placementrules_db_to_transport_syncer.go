@@ -7,6 +7,7 @@ import (
 	appsv1 "github.com/open-cluster-management/governance-policy-propagator/pkg/apis/apps/v1"
 	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/bundle"
 	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/db"
+	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/intervalpolicy"
 	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/transport"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -18,7 +19,7 @@ const (
 )
 
 // AddPlacementRulesDBToTransportSyncer adds placement rules db to transport syncer to the manager.
-func AddPlacementRulesDBToTransportSyncer(mgr ctrl.Manager, db db.HubOfHubsSpecDB, transport transport.Transport,
+func AddPlacementRulesDBToTransportSyncer(mgr ctrl.Manager, db db.SpecDB, transport transport.Transport,
 	syncInterval time.Duration) error {
 	if err := mgr.Add(&genericDBToTransportSyncer{
 		log:                ctrl.Log.WithName("placement-rules-db-to-transport-syncer"),
@@ -26,11 +27,11 @@ func AddPlacementRulesDBToTransportSyncer(mgr ctrl.Manager, db db.HubOfHubsSpecD
 		dbTableName:        placementRulesTableName,
 		transport:          transport,
 		transportBundleKey: placementRulesMsgKey,
-		syncInterval:       syncInterval,
 		createObjFunc:      func() metav1.Object { return &appsv1.PlacementRule{} },
 		createBundleFunc:   bundle.NewBaseBundle,
+		intervalPolicy:     intervalpolicy.NewExponentialBackoffIntervalPolicy(syncInterval),
 	}); err != nil {
-		return fmt.Errorf("failed to add db to transport syncer - %w", err)
+		return fmt.Errorf("failed to add placement rules db to transport syncer - %w", err)
 	}
 
 	return nil
