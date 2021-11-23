@@ -22,17 +22,6 @@ const (
 
 var errEnvVarNotFound = errors.New("not found environment variable")
 
-// SyncService abstracts Open Horizon Sync Service usage.
-type SyncService struct {
-	log        logr.Logger
-	client     *client.SyncServiceClient
-	compressor compressors.Compressor
-	msgChan    chan *transport.Message
-	stopChan   chan struct{}
-	startOnce  sync.Once
-	stopOnce   sync.Once
-}
-
 // NewSyncService returns a new instance of SyncService object.
 func NewSyncService(compressor compressors.Compressor, log logr.Logger) (*SyncService, error) {
 	serverProtocol, host, port, err := readEnvVars()
@@ -78,6 +67,17 @@ func readEnvVars() (string, string, uint16, error) {
 	return protocol, host, uint16(port), nil
 }
 
+// SyncService abstracts Open Horizon Sync Service usage.
+type SyncService struct {
+	log        logr.Logger
+	client     *client.SyncServiceClient
+	compressor compressors.Compressor
+	msgChan    chan *transport.Message
+	stopChan   chan struct{}
+	startOnce  sync.Once
+	stopOnce   sync.Once
+}
+
 // Start starts the sync service.
 func (s *SyncService) Start() {
 	s.startOnce.Do(func() {
@@ -90,6 +90,7 @@ func (s *SyncService) Stop() {
 	s.stopOnce.Do(func() {
 		s.stopChan <- struct{}{}
 		close(s.stopChan)
+		close(s.msgChan)
 	})
 }
 
@@ -134,8 +135,8 @@ func (s *SyncService) distributeMessages() {
 
 			compressedBytes, err := s.compressor.Compress(msg.Payload)
 			if err != nil {
-				s.log.Error(err, "Failed to compress payload", "message id", msg.ID, "message version", msg.Version,
-					"message type", msg.MsgType)
+				s.log.Error(err, "Failed to compress payload", "message id", msg.ID, "message type", msg.MsgType,
+					"message version", msg.Version)
 				continue
 			}
 
@@ -145,8 +146,8 @@ func (s *SyncService) distributeMessages() {
 				continue
 			}
 
-			s.log.Info("Message sent successfully", "id", msg.ID, "type", msg.MsgType, "version",
-				msg.Version)
+			s.log.Info("Message sent successfully", "message id", msg.ID, "message type", msg.MsgType,
+				"message version", msg.Version)
 		}
 	}
 }
