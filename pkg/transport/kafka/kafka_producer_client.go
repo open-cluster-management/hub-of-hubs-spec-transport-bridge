@@ -7,13 +7,16 @@ import (
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/go-logr/logr"
-	kafkaClient "github.com/open-cluster-management/hub-of-hubs-kafka-transport/kafka-client/kafka-producer"
+	kafkaproducer "github.com/open-cluster-management/hub-of-hubs-kafka-transport/kafka-client/kafka-producer"
 	kafkaHeaderTypes "github.com/open-cluster-management/hub-of-hubs-kafka-transport/types"
 	"github.com/open-cluster-management/hub-of-hubs-message-compression/compressors"
 	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/transport"
 )
 
-const bufferedChannelSize = 500
+const (
+	bufferedChannelSize = 500
+	partition           = 0
+)
 
 // NewProducer returns a new instance of Producer object.
 func NewProducer(compressor compressors.Compressor, log logr.Logger) (*Producer, error) {
@@ -24,7 +27,7 @@ func NewProducer(compressor compressors.Compressor, log logr.Logger) (*Producer,
 		return nil, fmt.Errorf("failed to create producer: %w", err)
 	}
 
-	kafkaProducer, err := kafkaClient.NewKafkaProducer(kafkaConfigMap, messageSizeLimit, deliveryChan)
+	kafkaProducer, err := kafkaproducer.NewKafkaProducer(kafkaConfigMap, messageSizeLimit, deliveryChan)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create producer: %w", err)
 	}
@@ -42,7 +45,7 @@ func NewProducer(compressor compressors.Compressor, log logr.Logger) (*Producer,
 // Producer abstracts hub-of-hubs-kafka-transport kafka-producer's generic usage.
 type Producer struct {
 	log           logr.Logger
-	kafkaProducer *kafkaClient.KafkaProducer
+	kafkaProducer *kafkaproducer.KafkaProducer
 	topic         string
 	compressor    compressors.Compressor
 	deliveryChan  chan kafka.Event
@@ -84,6 +87,8 @@ func (p *Producer) Start() {
 // Stop stops the producer.
 func (p *Producer) Stop() {
 	p.stopOnce.Do(func() {
+		p.stopChan <- struct{}{}
+
 		p.kafkaProducer.Close()
 		close(p.deliveryChan)
 		close(p.stopChan)
@@ -107,28 +112,28 @@ func (p *Producer) SendAsync(id string, msgType string, version string, payload 
 		return
 	}
 
+	compressedBytes, err := p.compressor.Compress(messageBytes)
+	if err != nil {
+		p.log.Error(err, "failed to compress bundle", "compressor type", p.compressor.GetType(),
+			"message id", message.ID, "message type", message.MsgType, "message version", message.Version)
+
+		return
+	}
+
 	headers := []kafka.Header{
 		{Key: kafkaHeaderTypes.MsgIDKey, Value: []byte(message.ID)},
 		{Key: kafkaHeaderTypes.MsgTypeKey, Value: []byte(message.MsgType)},
 		{Key: kafkaHeaderTypes.HeaderCompressionType, Value: []byte(p.compressor.GetType())},
 	}
 
-	compressedBytes, err := p.compressor.Compress(messageBytes)
-	if err != nil {
-		p.log.Error(err, "failed to compress bundle", "message id", message.ID, "message type", message.MsgType,
-			"message version", message.Version)
-
-		return
-	}
-
-	if err = p.kafkaProducer.ProduceAsync(message.ID, p.topic, 0, headers, compressedBytes); err != nil {
+	if err = p.kafkaProducer.ProduceAsync(message.ID, p.topic, partition, headers, compressedBytes); err != nil {
 		p.log.Error(err, "failed to send message", "message id", message.ID, "message type", message.MsgType,
 			"message version", message.Version)
 	}
 }
 
 // GetVersion returns an empty string if the object doesn't exist or an error occurred.
-func (p *Producer) GetVersion(id string, msgType string) string {
+func (p *Producer) GetVersion(_ string, _ string) string {
 	return ""
 }
 
