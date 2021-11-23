@@ -135,8 +135,8 @@ func (s *SyncService) distributeMessages() {
 
 			compressedBytes, err := s.compressor.Compress(msg.Payload)
 			if err != nil {
-				s.log.Error(err, "Failed to compress payload", "message id", msg.ID, "message type", msg.MsgType,
-					"message version", msg.Version)
+				s.log.Error(err, "Failed to compress payload", "compressor type", s.compressor.GetType(),
+					"message id", msg.ID, "message type", msg.MsgType, "message version", msg.Version)
 				continue
 			}
 
