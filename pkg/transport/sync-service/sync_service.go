@@ -124,7 +124,7 @@ func (s *SyncService) distributeMessages() {
 				ObjectID:    msg.ID,
 				ObjectType:  msg.MsgType,
 				Version:     msg.Version,
-				Description: fmt.Sprintf("compression-type:%s", s.compressor.GetType()),
+				Description: fmt.Sprintf("Content-Encoding:%s", s.compressor.GetType()),
 			}
 
 			if err := s.client.UpdateObject(&metaData); err != nil {
