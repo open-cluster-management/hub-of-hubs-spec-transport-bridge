@@ -774,7 +774,7 @@ github.com/op/go-logging v0.0.0-20160315200505-970db520ece7/go.mod h1:HzydrMdWEr
 github.com/open-cluster-management/api v0.0.0-20200610161514-939cead3902c/go.mod h1:+vUECYB7WkfCb52r0J7rxgD1mseSGAqGi8rTLLRcbgw=
 github.com/open-cluster-management/governance-policy-propagator v0.0.0-20210520203318-a78632de1e26 h1:EXnaCT1VMzyBenLpxBJ4gGQblX3LTlgq+P9Vi1S/OKw=
 github.com/open-cluster-management/governance-policy-propagator v0.0.0-20210520203318-a78632de1e26/go.mod h1:7gzDyC7PddcuInXS+kLrfYmto/ImSORibXwy8RGjNM8=
-github.com/open-cluster-management/hub-of-hubs-data-types v0.2.0 h1:zY61iHNLbIEOWjoHbo0KzXw/uEEtnJmF64O/RuzLiOI=
+github.com/open-cluster-management/hub-of-hubs-data-types v0.2.0 h1:TTRQWCH0NLAmKh2j8ihUawpY+s2V3sz2ulZxva9W83c=
 github.com/open-cluster-management/hub-of-hubs-data-types v0.2.0/go.mod h1:rLtZFQ8YdGQ2XHHKJFBOtQwnP63UDxaalhlQG8anP90=
 github.com/open-cluster-management/hub-of-hubs-data-types/apis/config v0.2.0 h1:0ryuYbgL7laaNh/O55+F2RtnNQODXGYEPMgFxLzjxok=
 github.com/open-cluster-management/hub-of-hubs-data-types/apis/config v0.2.0/go.mod h1:xpGxw+0si9vuDABvcJ9FxjznPw/uAbICzhaX+9JLLho=
