@@ -59,6 +59,8 @@ spec:
       containers:
         - name: hub-of-hubs-spec-transport-bridge
           image: $IMAGE
+          args:
+            - '--zap-devel=true'
           imagePullPolicy: Always
           env:
             - name: WATCH_NAMESPACE

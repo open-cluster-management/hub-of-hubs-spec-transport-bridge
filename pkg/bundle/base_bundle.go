@@ -11,7 +11,6 @@ func NewBaseBundle() Bundle {
 	return &baseBundle{
 		Objects:              make([]metav1.Object, 0),
 		DeletedObjects:       make([]metav1.Object, 0),
-		manipulateCustomFunc: func(object metav1.Object) {},
 	}
 }
 
@@ -20,33 +19,15 @@ func NewBaseBundle() Bundle {
 type baseBundle struct {
 	Objects              []metav1.Object `json:"objects"`
 	DeletedObjects       []metav1.Object `json:"deletedObjects"`
-	manipulateCustomFunc ManipulateCustomFunction
 }
 
 // AddObject adds an object to the bundle.
 func (b *baseBundle) AddObject(object metav1.Object, objectUID string) {
 	helpers.SetMetaDataAnnotation(object, datatypes.OriginOwnerReferenceAnnotation, objectUID)
-	b.Objects = append(b.Objects, b.manipulate(object))
+	b.Objects = append(b.Objects, object)
 }
 
 // AddObject adds a deleted object to the bundle.
 func (b *baseBundle) AddDeletedObject(object metav1.Object) {
-	b.DeletedObjects = append(b.DeletedObjects, b.manipulate(object))
-}
-
-func (b *baseBundle) manipulate(object metav1.Object) metav1.Object {
-	b.manipulateCustomFunc(object)
-	b.manipulateNameAndNamespace(object)
-
-	return object
-}
-
-// manipulate name and namespace to avoid collisions of resources with same name on different ns.
-// manipulate objects only if they were created on user namespaces. don't manipulate on hoh-system ns.
-func (b *baseBundle) manipulateNameAndNamespace(object metav1.Object) {
-	// object.SetNamespace(datatypes.HohSystemNamespace)
-	// object.SetName(fmt.Sprintf("%s-hoh-%s", object.GetName(), object.GetNamespace()))
-	if object.GetNamespace() == datatypes.HohSystemNamespace {
-		return
-	}
+	b.DeletedObjects = append(b.DeletedObjects, object)
 }
