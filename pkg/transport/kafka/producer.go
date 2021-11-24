@@ -2,7 +2,10 @@ package kafka
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"os"
+	"strconv"
 	"sync"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
@@ -14,16 +17,27 @@ import (
 )
 
 const (
+	envVarKafkaProducerID       = "KAFKA_PRODUCER_ID"
+	envVarKafkaBootstrapServers = "KAFKA_BOOTSTRAP_SERVERS"
+	envVarKafkaTopic            = "KAFKA_TOPIC"
+	envVarMessageSizeLimit      = "KAFKA_MESSAGE_SIZE_LIMIT_KB"
+
+	maxMessageSizeLimit = 987 // to make sure that the message size is below 1 MB.
 	bufferedChannelSize = 500
 	partition           = 0
 	kiloBytesToBytes    = 1000
+)
+
+var (
+	errEnvVarNotFound     = errors.New("environment variable not found")
+	errEnvVarIllegalValue = errors.New("environment variable illegal value")
 )
 
 // NewProducer returns a new instance of Producer object.
 func NewProducer(compressor compressors.Compressor, log logr.Logger) (*Producer, error) {
 	deliveryChan := make(chan kafka.Event, bufferedChannelSize)
 
-	kafkaConfigMap, topic, messageSizeLimit, err := getKafkaConfig()
+	kafkaConfigMap, topic, messageSizeLimit, err := readEnvVars()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create producer: %w", err)
 	}
@@ -44,6 +58,42 @@ func NewProducer(compressor compressors.Compressor, log logr.Logger) (*Producer,
 	}, nil
 }
 
+func readEnvVars() (*kafka.ConfigMap, string, int, error) {
+	producerID, found := os.LookupEnv(envVarKafkaProducerID)
+	if !found {
+		return nil, "", 0, fmt.Errorf("%w: %s", errEnvVarNotFound, envVarKafkaProducerID)
+	}
+
+	bootstrapServers, found := os.LookupEnv(envVarKafkaBootstrapServers)
+	if !found {
+		return nil, "", 0, fmt.Errorf("%w: %s", errEnvVarNotFound, envVarKafkaBootstrapServers)
+	}
+
+	topic, found := os.LookupEnv(envVarKafkaTopic)
+	if !found {
+		return nil, "", 0, fmt.Errorf("%w: %s", errEnvVarNotFound, envVarKafkaTopic)
+	}
+
+	messageSizeLimitString, found := os.LookupEnv(envVarMessageSizeLimit)
+	if !found {
+		return nil, "", 0, fmt.Errorf("%w: %s", errEnvVarNotFound, envVarMessageSizeLimit)
+	}
+
+	messageSizeLimit, err := strconv.Atoi(messageSizeLimitString)
+	if err != nil || messageSizeLimit <= 0 || messageSizeLimit > maxMessageSizeLimit {
+		return nil, "", 0, fmt.Errorf("%w: %s", errEnvVarIllegalValue, envVarMessageSizeLimit)
+	}
+
+	kafkaConfigMap := &kafka.ConfigMap{
+		"bootstrap.servers": bootstrapServers,
+		"client.id":         producerID,
+		"acks":              "1",
+		"retries":           "0",
+	}
+
+	return kafkaConfigMap, topic, messageSizeLimit, nil
+}
+
 // Producer abstracts hub-of-hubs-kafka-transport kafka-producer's generic usage.
 type Producer struct {
 	log           logr.Logger
@@ -54,29 +104,6 @@ type Producer struct {
 	stopChan      chan struct{}
 	startOnce     sync.Once
 	stopOnce      sync.Once
-}
-
-// deliveryHandler handles results of sent messages.
-// For now failed messages are only logged.
-func (p *Producer) deliveryHandler(kafkaEvent *kafka.Event) {
-	switch event := (*kafkaEvent).(type) {
-	case *kafka.Message:
-		if event.TopicPartition.Error != nil {
-			message := &transport.Message{}
-
-			if err := json.Unmarshal(event.Value, message); err != nil {
-				p.log.Error(err, "failed to deliver message", "kafka message key", string(event.Key),
-					"topic-partition", event.TopicPartition)
-				return
-			}
-
-			p.log.Error(event.TopicPartition.Error, "failed to deliver message",
-				"message id", message.ID, "message type", message.MsgType, "message version",
-				message.Version, "topic-partition", event.TopicPartition)
-		}
-	default:
-		p.log.Info("received unsupported kafka-event type", "event type", event)
-	}
 }
 
 // Start starts the kafka.
@@ -107,16 +134,16 @@ func (p *Producer) SendAsync(id string, msgType string, version string, payload 
 
 	messageBytes, err := json.Marshal(message)
 	if err != nil {
-		p.log.Error(err, "failed to send message", "message id", message.ID, "message type",
-			message.MsgType, "message version", message.Version)
+		p.log.Error(err, "Failed to send message", "MessageId", message.ID, "MessageType",
+			message.MsgType, "Version", message.Version)
 
 		return
 	}
 
 	compressedBytes, err := p.compressor.Compress(messageBytes)
 	if err != nil {
-		p.log.Error(err, "failed to compress bundle", "compressor type", p.compressor.GetType(),
-			"message id", message.ID, "message type", message.MsgType, "message version", message.Version)
+		p.log.Error(err, "Failed to compress bundle", "CompressorType", p.compressor.GetType(),
+			"MessageId", message.ID, "MessageType", message.MsgType, "Version", message.Version)
 
 		return
 	}
@@ -128,8 +155,8 @@ func (p *Producer) SendAsync(id string, msgType string, version string, payload 
 	}
 
 	if err = p.kafkaProducer.ProduceAsync(message.ID, p.topic, partition, headers, compressedBytes); err != nil {
-		p.log.Error(err, "failed to send message", "message id", message.ID, "message type",
-			message.MsgType, "message version", message.Version)
+		p.log.Error(err, "Failed to send message", "MessageId", message.ID, "MessageType",
+			message.MsgType, "Version", message.Version)
 	}
 }
 
@@ -147,5 +174,27 @@ func (p *Producer) handleDelivery() {
 		case event := <-p.deliveryChan:
 			p.deliveryHandler(&event)
 		}
+	}
+}
+
+// deliveryHandler handles results of sent messages. For now failed messages are only logged.
+func (p *Producer) deliveryHandler(kafkaEvent *kafka.Event) {
+	switch event := (*kafkaEvent).(type) {
+	case *kafka.Message:
+		if event.TopicPartition.Error != nil {
+			message := &transport.Message{}
+
+			if err := json.Unmarshal(event.Value, message); err != nil {
+				p.log.Error(err, "Failed to deliver message", "MessageKey", string(event.Key),
+					"TopicPartition", event.TopicPartition)
+				return
+			}
+
+			p.log.Error(event.TopicPartition.Error, "Failed to deliver message", "MessageId",
+				message.ID, "MessageType", message.MsgType, "Version", message.Version, "TopicPartition",
+				event.TopicPartition)
+		}
+	default:
+		p.log.Info("Received unsupported kafka-event type", "EventType", event)
 	}
 }

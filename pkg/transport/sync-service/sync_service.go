@@ -18,6 +18,7 @@ const (
 	envVarSyncServiceProtocol = "SYNC_SERVICE_PROTOCOL"
 	envVarSyncServiceHost     = "SYNC_SERVICE_HOST"
 	envVarSyncServicePort     = "SYNC_SERVICE_PORT"
+	compressionHeader         = "Content-Encoding"
 )
 
 var errEnvVarNotFound = errors.New("not found environment variable")
@@ -121,35 +122,35 @@ func (s *SyncService) distributeMessages() {
 		case <-s.stopChan:
 			return
 		case msg := <-s.msgChan:
-			metaData := client.ObjectMetaData{
+			objectMetaData := client.ObjectMetaData{
 				ObjectID:    msg.ID,
 				ObjectType:  msg.MsgType,
 				Version:     msg.Version,
-				Description: fmt.Sprintf("Content-Encoding:%s", s.compressor.GetType()),
+				Description: fmt.Sprintf("%s:%s", compressionHeader, s.compressor.GetType()),
 			}
 
-			if err := s.client.UpdateObject(&metaData); err != nil {
+			if err := s.client.UpdateObject(&objectMetaData); err != nil {
 				s.log.Error(err, "Failed to update the object in the Cloud Sync Service")
 				continue
 			}
 
 			compressedBytes, err := s.compressor.Compress(msg.Payload)
 			if err != nil {
-				s.log.Error(err, "Failed to compress payload", "compressor type",
-					s.compressor.GetType(), "message id", msg.ID, "message type", msg.MsgType, "message version",
+				s.log.Error(err, "Failed to compress payload", "CompressorType",
+					s.compressor.GetType(), "MessageId", msg.ID, "MessageType", msg.MsgType, "Version",
 					msg.Version)
 
 				continue
 			}
 
 			reader := bytes.NewReader(compressedBytes)
-			if err := s.client.UpdateObjectData(&metaData, reader); err != nil {
+			if err := s.client.UpdateObjectData(&objectMetaData, reader); err != nil {
 				s.log.Error(err, "Failed to update the object data in the Cloud Sync Service")
 				continue
 			}
 
-			s.log.Info("Message sent successfully", "message id", msg.ID, "message type", msg.MsgType,
-				"message version", msg.Version)
+			s.log.Info("Message sent successfully", "MessageId", msg.ID, "MessageType", msg.MsgType,
+				"Version", msg.Version)
 		}
 	}
 }
