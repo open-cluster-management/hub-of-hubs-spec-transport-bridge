@@ -16,7 +16,7 @@ import (
 const (
 	bufferedChannelSize = 500
 	partition           = 0
-	KB                  = 1024
+	kiloBytesToBytes    = 1000
 )
 
 // NewProducer returns a new instance of Producer object.
@@ -28,7 +28,8 @@ func NewProducer(compressor compressors.Compressor, log logr.Logger) (*Producer,
 		return nil, fmt.Errorf("failed to create producer: %w", err)
 	}
 
-	kafkaProducer, err := kafkaproducer.NewKafkaProducer(kafkaConfigMap, messageSizeLimit*KB, deliveryChan)
+	kafkaProducer, err := kafkaproducer.NewKafkaProducer(kafkaConfigMap, messageSizeLimit*kiloBytesToBytes,
+		deliveryChan)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create producer: %w", err)
 	}
