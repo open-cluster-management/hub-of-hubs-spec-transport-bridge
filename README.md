@@ -62,7 +62,7 @@ python -c "import sys, urllib as ul; print ul.quote_plus(sys.argv[1])" 'YourPass
     $ export TRANSPORT_TYPE=...
     ```
 
-1. If you set Sync-Service as transport, set the following:
+1. If you set sync-service as transport, set the following:
     1. Set the `SYNC_SERVICE_HOST` environment variable to hold the CSS host.
         ```
         $ export SYNC_SERVICE_HOST=...

@@ -4,8 +4,7 @@ package transport
 type Transport interface {
 	// SendAsync sends a message to the transport component asynchronously.
 	SendAsync(id string, msgType string, version string, payload []byte)
-	// GetVersion returns the latest version of a message from transport that matches the given
-	// identifiers.
+	// GetVersion returns the latest version of a message from transport.
 	GetVersion(id string, msgType string) string
 	// Start starts the transport.
 	Start()

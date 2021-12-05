@@ -8,9 +8,9 @@ require (
 	github.com/go-logr/logr v0.3.0
 	github.com/jackc/pgx/v4 v4.11.0
 	github.com/open-cluster-management/governance-policy-propagator v0.0.0-20210520203318-a78632de1e26
-	github.com/open-cluster-management/hub-of-hubs-data-types v0.2.0
-	github.com/open-cluster-management/hub-of-hubs-data-types/apis/config v0.2.0
-	github.com/open-cluster-management/hub-of-hubs-kafka-transport v0.0.0-20211123093536-1e80ecede69e
+	github.com/open-cluster-management/hub-of-hubs-data-types v0.2.2
+	github.com/open-cluster-management/hub-of-hubs-data-types/apis/config v0.2.2
+	github.com/open-cluster-management/hub-of-hubs-kafka-transport v0.0.0-20211123103330-4a0b4f760f84
 	github.com/open-cluster-management/hub-of-hubs-message-compression v0.0.0-20211122122545-c99e2d497b43
 	github.com/open-cluster-management/multicloud-operators-channel v1.0.1-0.20201120143200-e505a259de45
 	github.com/open-cluster-management/multicloud-operators-subscription v1.2.2-2-20201130-59f96
