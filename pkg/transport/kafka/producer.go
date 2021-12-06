@@ -183,11 +183,15 @@ func (p *Producer) deliveryHandler(kafkaEvent *kafka.Event) {
 	switch event := (*kafkaEvent).(type) {
 	case *kafka.Message:
 		if event.TopicPartition.Error != nil {
-			message := &transport.Message{}
+			decompressedBytes, err := p.compressor.Decompress(event.Value)
+			if err != nil { // something went wrong in delivery
+				p.logKafkaError(err, "Failed to deliver message", event)
+				return
+			}
 
-			if err := json.Unmarshal(event.Value, message); err != nil {
-				p.log.Error(err, "Failed to deliver message", "MessageKey", string(event.Key),
-					"TopicPartition", event.TopicPartition)
+			message := &transport.Message{}
+			if err := json.Unmarshal(decompressedBytes, message); err != nil { // something went wrong in delivery
+				p.logKafkaError(err, "Failed to deliver message", event)
 				return
 			}
 
@@ -198,4 +202,9 @@ func (p *Producer) deliveryHandler(kafkaEvent *kafka.Event) {
 	default:
 		p.log.Info("Received unsupported kafka-event type", "EventType", event)
 	}
+}
+
+func (p *Producer) logKafkaError(err error, errorMsg string, msg *kafka.Message) {
+	p.log.Error(err, errorMsg, "MessageKey", string(msg.Key),
+		"TopicPartition", msg.TopicPartition)
 }
