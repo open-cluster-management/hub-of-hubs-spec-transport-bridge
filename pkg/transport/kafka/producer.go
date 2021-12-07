@@ -115,7 +115,7 @@ type Producer struct {
 // Start starts the kafka.
 func (p *Producer) Start() {
 	p.startOnce.Do(func() {
-		go p.handleDelivery()
+		go p.deliveryReportHandler()
 	})
 }
 
@@ -171,45 +171,27 @@ func (p *Producer) GetVersion(_ string, _ string) string {
 	return ""
 }
 
-func (p *Producer) handleDelivery() {
+func (p *Producer) deliveryReportHandler() {
 	for {
 		select {
 		case <-p.stopChan:
 			return
 
 		case event := <-p.deliveryChan:
-			p.deliveryHandler(&event)
+			p.handleDeliveryReport(event)
 		}
 	}
 }
 
-// deliveryHandler handles results of sent messages. For now failed messages are only logged.
-func (p *Producer) deliveryHandler(kafkaEvent *kafka.Event) {
-	switch event := (*kafkaEvent).(type) {
+// handleDeliveryReport handles results of sent messages. For now failed messages are only logged.
+func (p *Producer) handleDeliveryReport(kafkaEvent kafka.Event) {
+	switch event := kafkaEvent.(type) {
 	case *kafka.Message:
 		if event.TopicPartition.Error != nil {
-			decompressedBytes, err := p.compressor.Decompress(event.Value)
-			if err != nil { // something went wrong in delivery
-				p.logKafkaError(err, "Failed to deliver message", event)
-				return
-			}
-
-			message := &transport.Message{}
-			if err := json.Unmarshal(decompressedBytes, message); err != nil { // something went wrong in delivery
-				p.logKafkaError(err, "Failed to deliver message", event)
-				return
-			}
-
 			p.log.Error(event.TopicPartition.Error, "Failed to deliver message", "MessageId",
-				message.ID, "MessageType", message.MsgType, "Version", message.Version, "TopicPartition",
-				event.TopicPartition)
+				string(event.Key), "TopicPartition", event.TopicPartition)
 		}
 	default:
 		p.log.Info("Received unsupported kafka-event type", "EventType", event)
 	}
-}
-
-func (p *Producer) logKafkaError(err error, errorMsg string, msg *kafka.Message) {
-	p.log.Error(err, errorMsg, "MessageKey", string(msg.Key),
-		"TopicPartition", msg.TopicPartition)
 }
