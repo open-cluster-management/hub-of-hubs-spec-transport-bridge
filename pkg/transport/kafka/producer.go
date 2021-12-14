@@ -81,8 +81,13 @@ func readEnvVars() (*kafka.ConfigMap, string, int, error) {
 	}
 
 	messageSizeLimit, err := strconv.Atoi(messageSizeLimitString)
-	if err != nil || messageSizeLimit <= 0 || messageSizeLimit > maxMessageSizeLimit {
+	if err != nil || messageSizeLimit <= 0 {
 		return nil, "", 0, fmt.Errorf("%w: %s", errEnvVarIllegalValue, envVarMessageSizeLimit)
+	}
+
+	if messageSizeLimit > maxMessageSizeLimit {
+		return nil, "", 0, fmt.Errorf("%w - size must not exceed %d : %s", errEnvVarIllegalValue,
+			maxMessageSizeLimit, envVarMessageSizeLimit)
 	}
 
 	kafkaConfigMap := &kafka.ConfigMap{
@@ -110,7 +115,7 @@ type Producer struct {
 // Start starts the kafka.
 func (p *Producer) Start() {
 	p.startOnce.Do(func() {
-		go p.handleDelivery()
+		go p.deliveryReportHandler()
 	})
 }
 
@@ -166,34 +171,25 @@ func (p *Producer) GetVersion(_ string, _ string) string {
 	return ""
 }
 
-func (p *Producer) handleDelivery() {
+func (p *Producer) deliveryReportHandler() {
 	for {
 		select {
 		case <-p.stopChan:
 			return
 
 		case event := <-p.deliveryChan:
-			p.deliveryHandler(&event)
+			p.handleDeliveryReport(event)
 		}
 	}
 }
 
-// deliveryHandler handles results of sent messages. For now failed messages are only logged.
-func (p *Producer) deliveryHandler(kafkaEvent *kafka.Event) {
-	switch event := (*kafkaEvent).(type) {
+// handleDeliveryReport handles results of sent messages. For now failed messages are only logged.
+func (p *Producer) handleDeliveryReport(kafkaEvent kafka.Event) {
+	switch event := kafkaEvent.(type) {
 	case *kafka.Message:
 		if event.TopicPartition.Error != nil {
-			message := &transport.Message{}
-
-			if err := json.Unmarshal(event.Value, message); err != nil {
-				p.log.Error(err, "Failed to deliver message", "MessageKey", string(event.Key),
-					"TopicPartition", event.TopicPartition)
-				return
-			}
-
 			p.log.Error(event.TopicPartition.Error, "Failed to deliver message", "MessageId",
-				message.ID, "MessageType", message.MsgType, "Version", message.Version, "TopicPartition",
-				event.TopicPartition)
+				string(event.Key), "TopicPartition", event.TopicPartition)
 		}
 	default:
 		p.log.Info("Received unsupported kafka-event type", "EventType", event)
