@@ -15,6 +15,8 @@ type (
 
 // Bundle bundles together a set of k8s objects to be sent to leaf hubs via transport layer.
 type Bundle interface {
+	// AddObject adds an object to the bundle.
 	AddObject(object metav1.Object, objectUID string)
+	// AddDeletedObject adds a deleted object to the bundle.
 	AddDeletedObject(object metav1.Object)
 }

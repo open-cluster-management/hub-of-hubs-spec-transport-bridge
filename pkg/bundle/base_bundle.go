@@ -31,7 +31,7 @@ func (b *baseBundle) AddObject(object metav1.Object, objectUID string) {
 	b.Objects = append(b.Objects, b.manipulate(object))
 }
 
-// AddObject adds a deleted object to the bundle.
+// AddDeletedObject adds a deleted object to the bundle.
 func (b *baseBundle) AddDeletedObject(object metav1.Object) {
 	b.DeletedObjects = append(b.DeletedObjects, b.manipulate(object))
 }

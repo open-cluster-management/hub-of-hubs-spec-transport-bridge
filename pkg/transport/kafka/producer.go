@@ -112,7 +112,7 @@ type Producer struct {
 	stopOnce      sync.Once
 }
 
-// Start starts the kafka.
+// Start starts kafka producer.
 func (p *Producer) Start() {
 	p.startOnce.Do(func() {
 		go p.deliveryReportHandler()
