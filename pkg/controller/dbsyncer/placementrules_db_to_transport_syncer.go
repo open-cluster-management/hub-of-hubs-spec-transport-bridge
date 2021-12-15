@@ -29,7 +29,7 @@ func AddPlacementRulesDBToTransportSyncer(mgr ctrl.Manager, db db.SpecDB, transp
 		transportBundleKey: placementRulesMsgKey,
 		createObjFunc:      func() metav1.Object { return &appsv1.PlacementRule{} },
 		createBundleFunc:   bundle.NewBaseBundle,
-		intervalPolicy:     intervalpolicy.NewExponentialBackoffIntervalPolicy(syncInterval),
+		intervalPolicy:     intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
 	}); err != nil {
 		return fmt.Errorf("failed to add placement rules db to transport syncer - %w", err)
 	}

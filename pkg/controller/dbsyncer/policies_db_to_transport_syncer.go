@@ -29,7 +29,7 @@ func AddPoliciesDBToTransportSyncer(mgr ctrl.Manager, db db.SpecDB, transport tr
 		transportBundleKey: policiesMsgKey,
 		createObjFunc:      func() metav1.Object { return &policiesv1.Policy{} },
 		createBundleFunc:   bundle.NewBaseBundle,
-		intervalPolicy:     intervalpolicy.NewExponentialBackoffIntervalPolicy(syncInterval),
+		intervalPolicy:     intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
 	}); err != nil {
 		return fmt.Errorf("failed to add policies db to transport syncer - %w", err)
 	}
