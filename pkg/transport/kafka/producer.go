@@ -10,8 +10,8 @@ import (
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/go-logr/logr"
+	"github.com/open-cluster-management/hub-of-hubs-kafka-transport/headers"
 	kafkaproducer "github.com/open-cluster-management/hub-of-hubs-kafka-transport/kafka-client/kafka-producer"
-	kafkaHeaderTypes "github.com/open-cluster-management/hub-of-hubs-kafka-transport/types"
 	"github.com/open-cluster-management/hub-of-hubs-message-compression/compressors"
 	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/transport"
 )
@@ -154,13 +154,11 @@ func (p *Producer) SendAsync(id string, msgType string, version string, payload 
 		return
 	}
 
-	headers := []kafka.Header{
-		{Key: kafkaHeaderTypes.MsgIDKey, Value: []byte(message.ID)},
-		{Key: kafkaHeaderTypes.MsgTypeKey, Value: []byte(message.MsgType)},
-		{Key: kafkaHeaderTypes.HeaderCompressionType, Value: []byte(p.compressor.GetType())},
+	messageHeaders := []kafka.Header{
+		{Key: headers.CompressionType, Value: []byte(p.compressor.GetType())},
 	}
 
-	if err = p.kafkaProducer.ProduceAsync(message.ID, p.topic, partition, headers, compressedBytes); err != nil {
+	if err = p.kafkaProducer.ProduceAsync(message.ID, p.topic, partition, messageHeaders, compressedBytes); err != nil {
 		p.log.Error(err, "Failed to send message", "MessageId", message.ID, "MessageType",
 			message.MsgType, "Version", message.Version)
 	}
