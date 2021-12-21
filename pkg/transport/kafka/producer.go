@@ -131,25 +131,25 @@ func (p *Producer) Stop() {
 
 // SendAsync sends a message to the sync service asynchronously.
 func (p *Producer) SendAsync(id string, msgType string, version string, payload []byte) {
-	message := &transport.Message{
+	msg := &transport.Message{
 		ID:      id,
 		MsgType: msgType,
 		Version: version,
 		Payload: payload,
 	}
 
-	messageBytes, err := json.Marshal(message)
+	msgBytes, err := json.Marshal(msg)
 	if err != nil {
-		p.log.Error(err, "Failed to send message", "MessageId", message.ID, "MessageType",
-			message.MsgType, "Version", message.Version)
+		p.log.Error(err, "Failed to send message", "MessageId", msg.ID, "MessageType", msg.MsgType,
+			"Version", msg.Version)
 
 		return
 	}
 
-	compressedBytes, err := p.compressor.Compress(messageBytes)
+	compressedBytes, err := p.compressor.Compress(msgBytes)
 	if err != nil {
 		p.log.Error(err, "Failed to compress bundle", "CompressorType", p.compressor.GetType(),
-			"MessageId", message.ID, "MessageType", message.MsgType, "Version", message.Version)
+			"MessageId", msg.ID, "MessageType", msg.MsgType, "Version", msg.Version)
 
 		return
 	}
@@ -158,10 +158,13 @@ func (p *Producer) SendAsync(id string, msgType string, version string, payload 
 		{Key: headers.CompressionType, Value: []byte(p.compressor.GetType())},
 	}
 
-	if err = p.kafkaProducer.ProduceAsync(message.ID, p.topic, partition, messageHeaders, compressedBytes); err != nil {
-		p.log.Error(err, "Failed to send message", "MessageId", message.ID, "MessageType",
-			message.MsgType, "Version", message.Version)
+	if err = p.kafkaProducer.ProduceAsync(msg.ID, p.topic, partition, messageHeaders, compressedBytes); err != nil {
+		p.log.Error(err, "Failed to send message", "MessageId", msg.ID, "MessageType", msg.MsgType,
+			"Version", msg.Version)
 	}
+
+	p.log.Info("Message sent successfully", "MessageId", msg.ID, "MessageType", msg.MsgType,
+		"Version", msg.Version)
 }
 
 // GetVersion returns an empty string if the object doesn't exist or an error occurred.
