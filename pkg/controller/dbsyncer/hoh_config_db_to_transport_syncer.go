@@ -2,9 +2,9 @@ package dbsyncer
 
 import (
 	"fmt"
-	datatypes "github.com/open-cluster-management/hub-of-hubs-data-types"
 	"time"
 
+	datatypes "github.com/open-cluster-management/hub-of-hubs-data-types"
 	configv1 "github.com/open-cluster-management/hub-of-hubs-data-types/apis/config/v1"
 	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/bundle"
 	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/db"
