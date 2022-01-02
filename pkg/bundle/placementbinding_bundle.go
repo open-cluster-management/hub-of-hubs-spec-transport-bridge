@@ -3,7 +3,7 @@ package bundle
 import (
 	"fmt"
 
-	policiesv1 "github.com/open-cluster-management/governance-policy-propagator/pkg/apis/policy/v1"
+	policiesv1 "github.com/open-cluster-management/governance-policy-propagator/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	policiesv1 "github.com/open-cluster-management/governance-policy-propagator/pkg/apis/policy/v1"
+	policiesv1 "github.com/open-cluster-management/governance-policy-propagator/api/v1"
 	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/bundle"
 	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/db"
 	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/intervalpolicy"
