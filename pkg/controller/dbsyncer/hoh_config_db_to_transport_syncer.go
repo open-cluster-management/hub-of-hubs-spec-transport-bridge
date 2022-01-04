@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	datatypes "github.com/open-cluster-management/hub-of-hubs-data-types"
 	configv1 "github.com/open-cluster-management/hub-of-hubs-data-types/apis/config/v1"
 	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/bundle"
 	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/db"
@@ -15,7 +16,6 @@ import (
 
 const (
 	configTableName = "configs"
-	configsMsgKey   = "Configs"
 )
 
 // AddHoHConfigDBToTransportSyncer adds hub-of-hubs config db to transport syncer to the manager.
@@ -26,10 +26,10 @@ func AddHoHConfigDBToTransportSyncer(mgr ctrl.Manager, db db.SpecDB, transport t
 		db:                 db,
 		dbTableName:        configTableName,
 		transport:          transport,
-		transportBundleKey: configsMsgKey,
+		transportBundleKey: datatypes.Config,
 		createObjFunc:      func() metav1.Object { return &configv1.Config{} },
 		createBundleFunc:   bundle.NewBaseBundle,
-		intervalPolicy:     intervalpolicy.NewExponentialBackoffIntervalPolicy(syncInterval),
+		intervalPolicy:     intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
 	}); err != nil {
 		return fmt.Errorf("failed to add config db to transport syncer - %w", err)
 	}

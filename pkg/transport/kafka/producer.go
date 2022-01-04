@@ -10,8 +10,8 @@ import (
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/go-logr/logr"
+	"github.com/open-cluster-management/hub-of-hubs-kafka-transport/headers"
 	kafkaproducer "github.com/open-cluster-management/hub-of-hubs-kafka-transport/kafka-client/kafka-producer"
-	kafkaHeaderTypes "github.com/open-cluster-management/hub-of-hubs-kafka-transport/types"
 	"github.com/open-cluster-management/hub-of-hubs-message-compression/compressors"
 	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/transport"
 )
@@ -112,7 +112,7 @@ type Producer struct {
 	stopOnce      sync.Once
 }
 
-// Start starts the kafka.
+// Start starts kafka producer.
 func (p *Producer) Start() {
 	p.startOnce.Do(func() {
 		go p.deliveryReportHandler()
@@ -131,39 +131,40 @@ func (p *Producer) Stop() {
 
 // SendAsync sends a message to the sync service asynchronously.
 func (p *Producer) SendAsync(id string, msgType string, version string, payload []byte) {
-	message := &transport.Message{
+	msg := &transport.Message{
 		ID:      id,
 		MsgType: msgType,
 		Version: version,
 		Payload: payload,
 	}
 
-	messageBytes, err := json.Marshal(message)
+	msgBytes, err := json.Marshal(msg)
 	if err != nil {
-		p.log.Error(err, "Failed to send message", "MessageId", message.ID, "MessageType",
-			message.MsgType, "Version", message.Version)
+		p.log.Error(err, "Failed to send message", "MessageId", msg.ID, "MessageType", msg.MsgType,
+			"Version", msg.Version)
 
 		return
 	}
 
-	compressedBytes, err := p.compressor.Compress(messageBytes)
+	compressedBytes, err := p.compressor.Compress(msgBytes)
 	if err != nil {
 		p.log.Error(err, "Failed to compress bundle", "CompressorType", p.compressor.GetType(),
-			"MessageId", message.ID, "MessageType", message.MsgType, "Version", message.Version)
+			"MessageId", msg.ID, "MessageType", msg.MsgType, "Version", msg.Version)
 
 		return
 	}
 
-	headers := []kafka.Header{
-		{Key: kafkaHeaderTypes.MsgIDKey, Value: []byte(message.ID)},
-		{Key: kafkaHeaderTypes.MsgTypeKey, Value: []byte(message.MsgType)},
-		{Key: kafkaHeaderTypes.HeaderCompressionType, Value: []byte(p.compressor.GetType())},
+	messageHeaders := []kafka.Header{
+		{Key: headers.CompressionType, Value: []byte(p.compressor.GetType())},
 	}
 
-	if err = p.kafkaProducer.ProduceAsync(message.ID, p.topic, partition, headers, compressedBytes); err != nil {
-		p.log.Error(err, "Failed to send message", "MessageId", message.ID, "MessageType",
-			message.MsgType, "Version", message.Version)
+	if err = p.kafkaProducer.ProduceAsync(msg.ID, p.topic, partition, messageHeaders, compressedBytes); err != nil {
+		p.log.Error(err, "Failed to send message", "MessageId", msg.ID, "MessageType", msg.MsgType,
+			"Version", msg.Version)
 	}
+
+	p.log.Info("Message sent successfully", "MessageId", msg.ID, "MessageType", msg.MsgType,
+		"Version", msg.Version)
 }
 
 // GetVersion returns an empty string if the object doesn't exist or an error occurred.

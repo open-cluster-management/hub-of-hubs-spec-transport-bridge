@@ -30,15 +30,12 @@ type genericDBToTransportSyncer struct {
 	intervalPolicy      intervalpolicy.IntervalPolicy
 }
 
-func (syncer *genericDBToTransportSyncer) Start(stopChannel <-chan struct{}) error {
-	ctx, cancelContext := context.WithCancel(context.Background())
-	defer cancelContext()
-
+func (syncer *genericDBToTransportSyncer) Start(ctx context.Context) error {
 	syncer.init(ctx)
 
 	go syncer.periodicSync(ctx)
 
-	<-stopChannel // blocking wait for stop event
+	<-ctx.Done() // blocking wait for cancel context event
 	syncer.log.Info("stopped syncer", "table", syncer.dbTableName)
 
 	return nil
@@ -143,13 +140,13 @@ func (syncer *genericDBToTransportSyncer) periodicSync(ctx context.Context) {
 	}
 }
 
-func (syncer *genericDBToTransportSyncer) syncToTransport(id string, objType string, timestamp *time.Time,
+func (syncer *genericDBToTransportSyncer) syncToTransport(objID string, objType string, timestamp *time.Time,
 	payload bundle.Bundle) {
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
-		syncer.log.Error(err, "failed to sync object", fmt.Sprintf("object type %s with id %s", objType, id))
+		syncer.log.Error(err, "failed to sync object", "objectId", objID, "objectType", objType)
 		return
 	}
 
-	syncer.transport.SendAsync(id, objType, timestamp.Format(timeFormat), payloadBytes)
+	syncer.transport.SendAsync(objID, objType, timestamp.Format(timeFormat), payloadBytes)
 }

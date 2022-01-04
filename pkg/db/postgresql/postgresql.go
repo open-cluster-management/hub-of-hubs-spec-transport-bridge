@@ -38,11 +38,6 @@ func NewPostgreSQL() (*PostgreSQL, error) {
 	return &PostgreSQL{conn: dbConnectionPool}, nil
 }
 
-// Stop stops PostgreSQL and closes the connection pool.
-func (p *PostgreSQL) Stop() {
-	p.conn.Close()
-}
-
 // GetBundle returns a bundle of objects from a specific table.
 func (p *PostgreSQL) GetBundle(ctx context.Context, tableName string, createObjFunc bundle.CreateObjectFunction,
 	intoBundle bundle.Bundle) (*time.Time, error) {
@@ -84,4 +79,9 @@ func (p *PostgreSQL) GetLastUpdateTimestamp(ctx context.Context, tableName strin
 	}
 
 	return &lastTimestamp, nil
+}
+
+// Stop stops PostgreSQL and closes the connection pool.
+func (p *PostgreSQL) Stop() {
+	p.conn.Close()
 }
