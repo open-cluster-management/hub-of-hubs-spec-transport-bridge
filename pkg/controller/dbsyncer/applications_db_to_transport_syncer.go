@@ -27,7 +27,7 @@ func AddApplicationsDBToTransportSyncer(mgr ctrl.Manager, db db.SpecDB, transpor
 		dbTableName:        applicationsTableName,
 		transport:          transport,
 		transportBundleKey: applicationsRuleMessageKey,
-		intervalPolicy:     intervalpolicy.NewExponentialBackoffIntervalPolicy(syncInterval),
+		intervalPolicy:     intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
 		createObjFunc:      func() metav1.Object { return &appsv1.Application{} },
 		createBundleFunc:   bundle.NewBaseBundle,
 	}); err != nil {

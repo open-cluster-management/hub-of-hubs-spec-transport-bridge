@@ -27,7 +27,7 @@ func AddChannelsDBToTransportSyncer(mgr ctrl.Manager, db db.SpecDB, transport tr
 		dbTableName:        channelsTableName,
 		transport:          transport,
 		transportBundleKey: channelsRuleMessageKey,
-		intervalPolicy:     intervalpolicy.NewExponentialBackoffIntervalPolicy(syncInterval),
+		intervalPolicy:     intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
 		createObjFunc:      func() metav1.Object { return &appsv1.Channel{} },
 		createBundleFunc:   bundle.NewBaseBundle,
 	}); err != nil {

@@ -27,7 +27,7 @@ func AddSubscriptionsDBToTransportSyncer(mgr ctrl.Manager, db db.SpecDB, transpo
 		dbTableName:        subscriptionsTableName,
 		transport:          transport,
 		transportBundleKey: subscriptionRuleMessageKey,
-		intervalPolicy:     intervalpolicy.NewExponentialBackoffIntervalPolicy(syncInterval),
+		intervalPolicy:     intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
 		createObjFunc:      func() metav1.Object { return &appsv1.Subscription{} },
 		createBundleFunc:   bundle.NewBaseBundle,
 	}); err != nil {
