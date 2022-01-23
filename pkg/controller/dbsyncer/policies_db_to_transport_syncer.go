@@ -5,10 +5,10 @@ import (
 	"time"
 
 	policiesv1 "github.com/open-cluster-management/governance-policy-propagator/api/v1"
-	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/bundle"
-	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/db"
-	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/intervalpolicy"
-	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/transport"
+	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/bundle"
+	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/db"
+	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/intervalpolicy"
+	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/transport"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 )

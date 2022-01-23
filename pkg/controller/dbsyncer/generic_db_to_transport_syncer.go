@@ -7,11 +7,11 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	datatypes "github.com/open-cluster-management/hub-of-hubs-data-types"
-	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/bundle"
-	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/db"
-	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/intervalpolicy"
-	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/transport"
+	datatypes "github.com/stolostron/hub-of-hubs-data-types"
+	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/bundle"
+	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/db"
+	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/intervalpolicy"
+	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/transport"
 )
 
 const (
