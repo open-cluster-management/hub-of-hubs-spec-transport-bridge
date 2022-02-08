@@ -2,6 +2,7 @@ package dbsyncer
 
 import (
 	"fmt"
+	datatypes "github.com/stolostron/hub-of-hubs-data-types"
 	"time"
 
 	policiesv1 "github.com/open-cluster-management/governance-policy-propagator/api/v1"
@@ -13,10 +14,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-const (
-	policiesTableName = "policies"
-	policiesMsgKey    = "Policies"
-)
+const policiesTableName = "policies"
 
 // AddPoliciesDBToTransportSyncer adds policies db to transport syncer to the manager.
 func AddPoliciesDBToTransportSyncer(mgr ctrl.Manager, db db.SpecDB, transport transport.Transport,
@@ -26,7 +24,7 @@ func AddPoliciesDBToTransportSyncer(mgr ctrl.Manager, db db.SpecDB, transport tr
 		db:                 db,
 		dbTableName:        policiesTableName,
 		transport:          transport,
-		transportBundleKey: policiesMsgKey,
+		transportBundleKey: datatypes.PoliciesMsgKey,
 		createObjFunc:      func() metav1.Object { return &policiesv1.Policy{} },
 		createBundleFunc:   bundle.NewBaseBundle,
 		intervalPolicy:     intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
