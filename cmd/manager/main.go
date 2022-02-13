@@ -12,16 +12,16 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	compressor "github.com/open-cluster-management/hub-of-hubs-message-compression"
-	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/controller"
-	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/db"
-	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/db/postgresql"
-	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/transport"
-	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/transport/kafka"
-	syncservice "github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/transport/sync-service"
 	"github.com/operator-framework/operator-sdk/pkg/log/zap"
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
 	"github.com/spf13/pflag"
+	compressor "github.com/stolostron/hub-of-hubs-message-compression"
+	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/controller"
+	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/db"
+	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/db/postgresql"
+	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/transport"
+	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/transport/kafka"
+	syncservice "github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/transport/sync-service"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	_ "k8s.io/client-go/plugin/pkg/client/auth"

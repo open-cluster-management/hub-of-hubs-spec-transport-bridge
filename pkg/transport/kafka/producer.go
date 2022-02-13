@@ -10,10 +10,10 @@ import (
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/go-logr/logr"
-	"github.com/open-cluster-management/hub-of-hubs-kafka-transport/headers"
-	kafkaproducer "github.com/open-cluster-management/hub-of-hubs-kafka-transport/kafka-client/kafka-producer"
-	"github.com/open-cluster-management/hub-of-hubs-message-compression/compressors"
-	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/transport"
+	"github.com/stolostron/hub-of-hubs-kafka-transport/headers"
+	kafkaproducer "github.com/stolostron/hub-of-hubs-kafka-transport/kafka-client/kafka-producer"
+	"github.com/stolostron/hub-of-hubs-message-compression/compressors"
+	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/transport"
 )
 
 const (

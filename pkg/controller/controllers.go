@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/controller/dbsyncer"
-	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/db"
-	"github.com/open-cluster-management/hub-of-hubs-spec-transport-bridge/pkg/transport"
+	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/controller/dbsyncer"
+	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/db"
+	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/transport"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
