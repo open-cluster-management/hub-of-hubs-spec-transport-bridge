@@ -76,7 +76,7 @@ func (syncer *genericDBToTransportSyncer) initLastUpdateTimestampFromTransport()
 func (syncer *genericDBToTransportSyncer) syncBundle(ctx context.Context) bool {
 	lastUpdateTimestamp, err := syncer.db.GetLastUpdateTimestamp(ctx, syncer.dbTableName)
 	if err != nil {
-		syncer.log.Error(err, "unable to sync bundle to leaf hubs", syncer.dbTableName)
+		syncer.log.Error(err, "unable to sync bundle to leaf hubs", "table", syncer.dbTableName)
 
 		return false
 	}
@@ -91,7 +91,7 @@ func (syncer *genericDBToTransportSyncer) syncBundle(ctx context.Context) bool {
 	lastUpdateTimestamp, err = syncer.db.GetBundle(ctx, syncer.dbTableName, syncer.createObjFunc, bundleResult)
 
 	if err != nil {
-		syncer.log.Error(err, "unable to sync bundle to leaf hubs", syncer.dbTableName)
+		syncer.log.Error(err, "unable to sync bundle to leaf hubs", "table", syncer.dbTableName)
 
 		return false
 	}
