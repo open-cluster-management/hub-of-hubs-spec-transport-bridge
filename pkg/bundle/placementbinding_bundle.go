@@ -8,7 +8,7 @@ import (
 )
 
 // NewPlacementBindingBundle creates a new placement binding bundle with no data in it.
-func NewPlacementBindingBundle() Bundle {
+func NewPlacementBindingBundle() ObjectsBundle {
 	return &baseBundle{
 		Objects:              make([]metav1.Object, 0),
 		DeletedObjects:       make([]metav1.Object, 0),

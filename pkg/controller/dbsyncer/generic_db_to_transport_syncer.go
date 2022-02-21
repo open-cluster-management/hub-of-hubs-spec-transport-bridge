@@ -2,13 +2,11 @@ package dbsyncer
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/go-logr/logr"
 	datatypes "github.com/stolostron/hub-of-hubs-data-types"
-	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/bundle"
 	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/db"
 	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/intervalpolicy"
 	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/transport"
@@ -25,8 +23,7 @@ type genericDBToTransportSyncer struct {
 	transport           transport.Transport
 	transportBundleKey  string
 	lastUpdateTimestamp *time.Time
-	createObjFunc       bundle.CreateObjectFunction
-	createBundleFunc    bundle.CreateBundleFunction
+	syncBundleFunc      func(ctx context.Context) bool
 	intervalPolicy      intervalpolicy.IntervalPolicy
 }
 
@@ -55,51 +52,21 @@ func (syncer *genericDBToTransportSyncer) init(ctx context.Context) {
 	}
 
 	syncer.log.Info("initialized syncer", "table", fmt.Sprintf("spec.%s", syncer.dbTableName))
-	syncer.syncBundle(ctx)
+	syncer.syncBundleFunc(ctx)
 }
 
 func (syncer *genericDBToTransportSyncer) initLastUpdateTimestampFromTransport() *time.Time {
 	version := syncer.transport.GetVersion(syncer.transportBundleKey, datatypes.SpecBundle)
 	if version == "" {
-		return nil
+		return &time.Time{}
 	}
 
 	timestamp, err := time.Parse(timeFormat, version)
 	if err != nil {
-		return nil
+		return &time.Time{}
 	}
 
 	return &timestamp
-}
-
-// syncBundle performs the actual sync logic and returns true if bundle was committed to transport, otherwise false.
-func (syncer *genericDBToTransportSyncer) syncBundle(ctx context.Context) bool {
-	lastUpdateTimestamp, err := syncer.db.GetLastUpdateTimestamp(ctx, syncer.dbTableName)
-	if err != nil {
-		syncer.log.Error(err, "unable to sync bundle to leaf hubs", syncer.dbTableName)
-
-		return false
-	}
-
-	if !lastUpdateTimestamp.After(*syncer.lastUpdateTimestamp) { // sync only if something has changed
-		return false
-	}
-
-	// if we got here, then the last update timestamp from db is after what we have in memory.
-	// this means something has changed in db, syncing to transport.
-	bundleResult := syncer.createBundleFunc()
-	lastUpdateTimestamp, err = syncer.db.GetBundle(ctx, syncer.dbTableName, syncer.createObjFunc, bundleResult)
-
-	if err != nil {
-		syncer.log.Error(err, "unable to sync bundle to leaf hubs", syncer.dbTableName)
-
-		return false
-	}
-
-	syncer.lastUpdateTimestamp = lastUpdateTimestamp
-	syncer.syncToTransport(syncer.transportBundleKey, datatypes.SpecBundle, lastUpdateTimestamp, bundleResult)
-
-	return true
 }
 
 func (syncer *genericDBToTransportSyncer) periodicSync(ctx context.Context) {
@@ -114,7 +81,7 @@ func (syncer *genericDBToTransportSyncer) periodicSync(ctx context.Context) {
 		case <-ticker.C:
 			// define timeout of max sync interval on the sync function
 			ctxWithTimeout, cancelFunc := context.WithTimeout(ctx, syncer.intervalPolicy.GetMaxInterval())
-			synced := syncer.syncBundle(ctxWithTimeout)
+			synced := syncer.syncBundleFunc(ctxWithTimeout)
 
 			cancelFunc() // cancel child ctx and is used to cleanup resources once context expires or sync is done.
 
@@ -138,15 +105,4 @@ func (syncer *genericDBToTransportSyncer) periodicSync(ctx context.Context) {
 			}
 		}
 	}
-}
-
-func (syncer *genericDBToTransportSyncer) syncToTransport(objID string, objType string, timestamp *time.Time,
-	payload bundle.Bundle) {
-	payloadBytes, err := json.Marshal(payload)
-	if err != nil {
-		syncer.log.Error(err, "failed to sync object", "objectId", objID, "objectType", objType)
-		return
-	}
-
-	syncer.transport.SendAsync(objID, objType, timestamp.Format(timeFormat), payloadBytes)
 }

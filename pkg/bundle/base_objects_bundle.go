@@ -9,7 +9,7 @@ import (
 )
 
 // NewBaseBundle creates a new base bundle with no data in it.
-func NewBaseBundle() Bundle {
+func NewBaseBundle() ObjectsBundle {
 	return &baseBundle{
 		Objects:              make([]metav1.Object, 0),
 		DeletedObjects:       make([]metav1.Object, 0),
