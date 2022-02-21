@@ -130,12 +130,13 @@ func (p *Producer) Stop() {
 }
 
 // SendAsync sends a message to the sync service asynchronously.
-func (p *Producer) SendAsync(id string, msgType string, version string, payload []byte) {
+func (p *Producer) SendAsync(destinationHubName string, id string, msgType string, version string, payload []byte) {
 	msg := &transport.Message{
-		ID:      id,
-		MsgType: msgType,
-		Version: version,
-		Payload: payload,
+		ID:          id,
+		MsgType:     msgType,
+		Version:     version,
+		Destination: destinationHubName,
+		Payload:     payload,
 	}
 
 	msgBytes, err := json.Marshal(msg)
@@ -158,7 +159,15 @@ func (p *Producer) SendAsync(id string, msgType string, version string, payload 
 		{Key: headers.CompressionType, Value: []byte(p.compressor.GetType())},
 	}
 
-	if err = p.kafkaProducer.ProduceAsync(msg.ID, p.topic, partition, messageHeaders, compressedBytes); err != nil {
+	if destinationHubName != "" { // set destination if specified
+		messageHeaders = append(messageHeaders, kafka.Header{
+			Key:   headers.DestinationHub,
+			Value: []byte(destinationHubName),
+		})
+	}
+
+	if err = p.kafkaProducer.ProduceAsync(fmt.Sprintf("%s.%s", destinationHubName, msg.ID), p.topic, partition,
+		messageHeaders, compressedBytes); err != nil {
 		p.log.Error(err, "Failed to send message", "MessageId", msg.ID, "MessageType", msg.MsgType,
 			"Version", msg.Version)
 	}
