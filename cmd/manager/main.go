@@ -37,7 +37,7 @@ const (
 	syncServiceTransportTypeName            = "sync-service"
 	envVarSyncInterval                      = "SYNC_INTERVAL"
 	leaderElectionLockName                  = "hub-of-hubs-spec-transport-bridge-lock"
-	statusDBWatchIntervalMultiplier         = 2
+	statusDBWatchIntervalMultiplier         = 1
 )
 
 var (

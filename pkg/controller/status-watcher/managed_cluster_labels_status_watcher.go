@@ -166,7 +166,7 @@ func (watcher *managedClusterLabelsStatusWatcher) trimDeletedLabelsByStatus(ctx 
 		}
 	}
 
-	return successRate >= 0
+	return successRate > 0
 }
 
 // TODO: once non-k8s-restapi exposes hub names, remove line.
@@ -214,5 +214,5 @@ func (watcher *managedClusterLabelsStatusWatcher) fillMissingLeafHubNames(ctx co
 			"leaf hub name", leafHubName, "version", managedClusterLabelsSpec.Version)
 	}
 
-	return successRate >= 0
+	return successRate > 0
 }
