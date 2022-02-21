@@ -28,7 +28,7 @@ func AddPlacementBindingsDBToTransportSyncer(mgr ctrl.Manager, db db.SpecDB, tra
 		transport:          transport,
 		transportBundleKey: placementBindingsMsgKey,
 		createObjFunc:      func() metav1.Object { return &policiesv1.PlacementBinding{} },
-		createBundleFunc:   bundle.NewPlacementBindingBundle,
+		createBundleFunc:   bundle.NewBaseBundle,
 		intervalPolicy:     intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
 	}); err != nil {
 		return fmt.Errorf("failed to add placement bindings db to transport syncer - %w", err)
