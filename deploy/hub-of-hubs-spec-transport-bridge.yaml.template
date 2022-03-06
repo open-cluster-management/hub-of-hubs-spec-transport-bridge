@@ -97,9 +97,9 @@ spec:
             - name: SYNC_SERVICE_PROTOCOL
               value: "http"
             - name: SYNC_SERVICE_HOST
-              value: "$SYNC_SERVICE_HOST"
+              value: "sync-service-css.sync-service.svc.cluster.local"
             - name: SYNC_SERVICE_PORT
-              value: "$SYNC_SERVICE_PORT"
+              value: "9689"
             - name: SYNC_INTERVAL
               value: 5s
             - name: POD_NAMESPACE
