@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	applicationsTableName      = "applications"
-	applicationsRuleMessageKey = "applications"
+	applicationsTableName  = "Applications"
+	applicationsMessageKey = "Applications"
 )
 
 // AddApplicationsDBToTransportSyncer adds applications db to transport syncer to the manager.
@@ -26,7 +26,7 @@ func AddApplicationsDBToTransportSyncer(mgr ctrl.Manager, db db.SpecDB, transpor
 		db:                 db,
 		dbTableName:        applicationsTableName,
 		transport:          transport,
-		transportBundleKey: applicationsRuleMessageKey,
+		transportBundleKey: applicationsMessageKey,
 		intervalPolicy:     intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
 		createObjFunc:      func() metav1.Object { return &appsv1.Application{} },
 		createBundleFunc:   bundle.NewBaseBundle,
