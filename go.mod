@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/cenkalti/backoff/v4 v4.1.3-0.20211111164109-6b0e4ad0cd65
 	github.com/confluentinc/confluent-kafka-go v1.7.0
-	github.com/go-logr/logr v1.2.0
+	github.com/go-logr/logr v0.4.0
 	github.com/jackc/pgx/v4 v4.11.0
 	github.com/open-cluster-management/governance-policy-propagator v0.0.0-20211209195740-297c4b4e4fbc
 	github.com/open-cluster-management/multicloud-operators-placementrule v1.2.4-0-20211122-be034
@@ -16,10 +16,10 @@ require (
 	github.com/stolostron/hub-of-hubs-data-types/apis/config v0.3.1
 	github.com/stolostron/hub-of-hubs-kafka-transport v0.3.1
 	github.com/stolostron/hub-of-hubs-message-compression v0.3.1
-	github.com/stolostron/multicloud-operators-channel v1.2.4-0-20220201-bc6b121
-	github.com/stolostron/multicloud-operators-subscription v1.2.4-0-20210915-3eda062.0.20220226001101-0f3488ace1eb
-	k8s.io/apimachinery v0.23.1
+	k8s.io/apimachinery v0.21.3
 	k8s.io/client-go v12.0.0+incompatible
+	open-cluster-management.io/multicloud-operators-channel v0.6.0
+	open-cluster-management.io/multicloud-operators-subscription v0.6.0
 	sigs.k8s.io/application v0.8.3
 	sigs.k8s.io/controller-runtime v0.9.2
 )
@@ -41,7 +41,7 @@ require (
 	github.com/evanphx/json-patch v4.12.0+incompatible // indirect
 	github.com/form3tech-oss/jwt-go v3.2.3+incompatible // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
-	github.com/go-logr/zapr v1.2.0 // indirect
+	github.com/go-logr/zapr v0.4.0 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/jsonreference v0.19.5 // indirect
 	github.com/go-openapi/spec v0.19.5 // indirect
@@ -70,7 +70,6 @@ require (
 	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
-	github.com/open-cluster-management/multicloud-operators-channel v1.0.1-0.20201120143200-e505a259de45 // indirect
 	github.com/open-horizon/edge-utilities v0.0.0-20190711093331-0908b45a7152 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_golang v1.11.0 // indirect
@@ -94,22 +93,16 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
-	k8s.io/api v0.23.1 // indirect
-	k8s.io/apiextensions-apiserver v0.23.1 // indirect
-	k8s.io/component-base v0.23.1 // indirect
+	k8s.io/api v0.21.3 // indirect
+	k8s.io/apiextensions-apiserver v0.21.3 // indirect
+	k8s.io/component-base v0.21.3 // indirect
 	k8s.io/klog v1.0.0 // indirect
-	k8s.io/klog/v2 v2.30.0 // indirect
-	k8s.io/kube-openapi v0.0.0-20211115234752-e816edb12b65 // indirect
+	k8s.io/klog/v2 v2.10.0 // indirect
+	k8s.io/kube-openapi v0.0.0-20210305001622-591a79e4bda7 // indirect
 	k8s.io/utils v0.0.0-20210930125809-cb0fa318a74b // indirect
 	sigs.k8s.io/json v0.0.0-20211020170558-c049b76a60c6 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.1.2 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-replace (
-	github.com/go-logr/logr => github.com/go-logr/logr v0.4.0
-	github.com/go-logr/zapr => github.com/go-logr/zapr v0.4.0
-	github.com/open-cluster-management/multicloud-operators-placementrule => github.com/stolostron/multicloud-operators-placementrule v1.2.4-0-20211122-be034
-	k8s.io/client-go => k8s.io/client-go v0.23.1
-	k8s.io/klog/v2 => k8s.io/klog/v2 v2.10.0
-)
+replace k8s.io/client-go => k8s.io/client-go v0.21.3

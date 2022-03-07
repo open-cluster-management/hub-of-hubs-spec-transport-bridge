@@ -8,8 +8,8 @@ import (
 	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/db"
 	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/intervalpolicy"
 	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/transport"
-	appsv1 "github.com/stolostron/multicloud-operators-channel/pkg/apis/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	appsv1 "open-cluster-management.io/multicloud-operators-channel/pkg/apis/apps/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
