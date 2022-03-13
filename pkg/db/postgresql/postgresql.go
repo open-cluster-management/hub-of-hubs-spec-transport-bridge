@@ -49,19 +49,19 @@ func (p *PostgreSQL) GetBundle(ctx context.Context, tableName string, createObjF
 	rows, _ := p.conn.Query(ctx, fmt.Sprintf(`SELECT id,payload,deleted FROM spec.%s`, tableName))
 	for rows.Next() {
 		var (
-			idNum   string
+			id      string
 			deleted bool
 		)
 
 		object := createObjFunc()
-		if err := rows.Scan(&idNum, &object, &deleted); err != nil {
+		if err := rows.Scan(&id, &object, &deleted); err != nil {
 			return nil, fmt.Errorf("error reading from table spec.%s - %w", tableName, err)
 		}
 
 		if deleted {
 			intoBundle.AddDeletedObject(object)
 		} else {
-			intoBundle.AddObject(object, idNum)
+			intoBundle.AddObject(object, id)
 		}
 	}
 

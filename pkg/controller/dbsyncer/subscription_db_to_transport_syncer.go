@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	subscriptionsTableName = "Subscriptions"
+	subscriptionsTableName = "subscriptions"
 	subscriptionMessageKey = "Subscriptions"
 )
 
