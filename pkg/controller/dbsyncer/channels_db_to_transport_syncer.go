@@ -31,7 +31,7 @@ func AddChannelsDBToTransportSyncer(mgr ctrl.Manager, db db.SpecDB, transport tr
 		createBundleFunc:   bundle.NewBaseBundle,
 		intervalPolicy:     intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
 	}); err != nil {
-		return fmt.Errorf("failed to add channel db to transport syncer - %w", err)
+		return fmt.Errorf("failed to add channels db to transport syncer - %w", err)
 	}
 
 	return nil

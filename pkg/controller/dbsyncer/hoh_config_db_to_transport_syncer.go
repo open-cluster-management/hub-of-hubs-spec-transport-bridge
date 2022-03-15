@@ -31,7 +31,7 @@ func AddHoHConfigDBToTransportSyncer(mgr ctrl.Manager, db db.SpecDB, transport t
 		createBundleFunc:   bundle.NewBaseBundle,
 		intervalPolicy:     intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
 	}); err != nil {
-		return fmt.Errorf("failed to add config db to transport syncer - %w", err)
+		return fmt.Errorf("failed to add configs db to transport syncer - %w", err)
 	}
 
 	return nil

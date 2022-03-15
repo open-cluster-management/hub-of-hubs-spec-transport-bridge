@@ -31,7 +31,7 @@ func AddSubscriptionsDBToTransportSyncer(mgr ctrl.Manager, db db.SpecDB, transpo
 		createBundleFunc:   bundle.NewBaseBundle,
 		intervalPolicy:     intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
 	}); err != nil {
-		return fmt.Errorf("failed to add subscription db to transport syncer - %w", err)
+		return fmt.Errorf("failed to add subscriptions db to transport syncer - %w", err)
 	}
 
 	return nil
