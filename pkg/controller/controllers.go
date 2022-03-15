@@ -18,6 +18,9 @@ func AddDBToTransportSyncers(mgr ctrl.Manager, specDB db.SpecDB, transportObj tr
 		dbsyncer.AddPoliciesDBToTransportSyncer,
 		dbsyncer.AddPlacementRulesDBToTransportSyncer,
 		dbsyncer.AddPlacementBindingsDBToTransportSyncer,
+		dbsyncer.AddApplicationsDBToTransportSyncer,
+		dbsyncer.AddSubscriptionsDBToTransportSyncer,
+		dbsyncer.AddChannelsDBToTransportSyncer,
 	}
 	for _, addDBSyncerFunction := range addDBSyncerFunctions {
 		if err := addDBSyncerFunction(mgr, specDB, transportObj, syncInterval); err != nil {
