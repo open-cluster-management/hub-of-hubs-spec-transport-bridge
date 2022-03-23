@@ -14,19 +14,19 @@ import (
 )
 
 const (
-	channelsTableName  = "channels"
-	channelsMessageKey = "Channels"
+	channelsTableName = "channels"
+	channelsMsgKey    = "Channels"
 )
 
 // AddChannelsDBToTransportSyncer adds channels db to transport syncer to the manager.
 func AddChannelsDBToTransportSyncer(mgr ctrl.Manager, db db.SpecDB, transport transport.Transport,
 	syncInterval time.Duration) error {
 	if err := mgr.Add(&genericDBToTransportSyncer{
-		log:                ctrl.Log.WithName("channel-db-to-transport-syncer"),
+		log:                ctrl.Log.WithName("channels-db-to-transport-syncer"),
 		db:                 db,
 		dbTableName:        channelsTableName,
 		transport:          transport,
-		transportBundleKey: channelsMessageKey,
+		transportBundleKey: channelsMsgKey,
 		createObjFunc:      func() metav1.Object { return &channelsv1.Channel{} },
 		createBundleFunc:   bundle.NewBaseBundle,
 		intervalPolicy:     intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
