@@ -159,15 +159,17 @@ func (p *Producer) SendAsync(destinationHubName string, id string, msgType strin
 		{Key: headers.CompressionType, Value: []byte(p.compressor.GetType())},
 	}
 
+	msgKey := msg.ID
 	if destinationHubName != "" { // set destination if specified
+		msgKey = fmt.Sprintf("%s.%s", destinationHubName, msg.ID)
+
 		messageHeaders = append(messageHeaders, kafka.Header{
 			Key:   headers.DestinationHub,
 			Value: []byte(destinationHubName),
 		})
 	}
 
-	if err = p.kafkaProducer.ProduceAsync(fmt.Sprintf("%s.%s", destinationHubName, msg.ID), p.topic, partition,
-		messageHeaders, compressedBytes); err != nil {
+	if err = p.kafkaProducer.ProduceAsync(msgKey, p.topic, partition, messageHeaders, compressedBytes); err != nil {
 		p.log.Error(err, "Failed to send message", "MessageId", msg.ID, "MessageType", msg.MsgType,
 			"Version", msg.Version)
 	}

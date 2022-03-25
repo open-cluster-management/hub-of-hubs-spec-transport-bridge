@@ -58,12 +58,12 @@ func (syncer *genericDBToTransportSyncer) init(ctx context.Context) {
 func (syncer *genericDBToTransportSyncer) initLastUpdateTimestampFromTransport() *time.Time {
 	version := syncer.transport.GetVersion(syncer.transportBundleKey, datatypes.SpecBundle)
 	if version == "" {
-		return &time.Time{}
+		return nil
 	}
 
 	timestamp, err := time.Parse(timeFormat, version)
 	if err != nil {
-		return &time.Time{}
+		return nil
 	}
 
 	return &timestamp
