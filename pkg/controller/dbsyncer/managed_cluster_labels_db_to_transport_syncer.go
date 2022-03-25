@@ -14,7 +14,11 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-const managedClusterLabelsDBTableName = "managed_clusters_labels"
+const (
+	managedClusterLabelsDBTableName     = "managed_clusters_labels"
+	managedClusterSetLabelKey           = "cluster.open-cluster-management.io/clusterset"
+	managedClusterSetsTrackingTableName = "managed_cluster_sets_tracking"
+)
 
 // AddManagedClusterLabelsDBToTransportSyncer adds managed-cluster labels db to transport syncer to the manager.
 func AddManagedClusterLabelsDBToTransportSyncer(mgr ctrl.Manager, db db.SpecDB, transport transport.Transport,
@@ -68,6 +72,13 @@ func (syncer *managedClusterLabelsDBToTransportSyncer) syncManagedClusterLabelsB
 	}
 	// remove entries with no LH name (temporary state)
 	delete(leafHubToLabelsSpecBundleMap, "") // TODO: once non-k8s-restapi exposes hub names, remove line.
+	// track ManagedClusterSet assignments
+	if err := syncer.trackManagedClusterSetAssignments(ctx, leafHubToLabelsSpecBundleMap); err != nil {
+		syncer.log.Error(err, "unable to track managed cluster set label assignments",
+			"tableName", managedClusterSetsTrackingTableName)
+
+		return false
+	}
 
 	syncer.lastUpdateTimestamp = lastUpdateTimestamp
 
@@ -89,4 +100,23 @@ func (syncer *managedClusterLabelsDBToTransportSyncer) syncToTransport(destinati
 	}
 
 	syncer.transport.SendAsync(destination, objID, objType, timestamp.Format(timeFormat), payloadBytes)
+}
+
+func (syncer *managedClusterLabelsDBToTransportSyncer) trackManagedClusterSetAssignments(ctx context.Context,
+	leafHubToLabelsSpecBundleMap map[string]*spec.ManagedClusterLabelsSpecBundle) error {
+	for leafHubName, managedClusterLabelsBundle := range leafHubToLabelsSpecBundleMap {
+		for _, managedClusterLabelsSpec := range managedClusterLabelsBundle.Objects {
+			// make sure MC is tracked if belongs to a set
+			if clusterSetName, found := managedClusterLabelsSpec.Labels[managedClusterSetLabelKey]; found {
+				// found a cluster-set, update tracking
+				if err := syncer.db.AddManagedClusterSetTracking(ctx, managedClusterSetsTrackingTableName,
+					clusterSetName, leafHubName, managedClusterLabelsSpec.Name); err != nil {
+					return fmt.Errorf("failed to track managed cluster set {%s} assignment for cluster {%s.%s} - %w",
+						clusterSetName, leafHubName, managedClusterLabelsSpec.Name, err)
+				} // the un-tracking should later be supported
+			}
+		}
+	}
+
+	return nil
 }

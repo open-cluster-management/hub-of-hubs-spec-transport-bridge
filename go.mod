@@ -13,7 +13,7 @@ require (
 	github.com/open-horizon/edge-sync-service-client v0.0.0-20211025140051-714c20915232
 	github.com/operator-framework/operator-sdk v0.19.4
 	github.com/spf13/pflag v1.0.5
-	github.com/stolostron/hub-of-hubs-data-types v0.3.2-0.20220324192634-f1cac4cc837e
+	github.com/stolostron/hub-of-hubs-data-types v0.3.2-0.20220325172236-d57d80642262
 	github.com/stolostron/hub-of-hubs-data-types/apis/config v0.3.1
 	github.com/stolostron/hub-of-hubs-kafka-transport v0.3.2-0.20220216134627-cc88dc55ceac
 	github.com/stolostron/hub-of-hubs-message-compression v0.3.1
@@ -37,7 +37,7 @@ require (
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
-	github.com/daixiang0/gci v0.2.9 // indirect
+	github.com/daixiang0/gci v0.3.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/deckarep/golang-set v1.8.0 // indirect
 	github.com/emicklei/go-restful v2.11.1+incompatible // indirect

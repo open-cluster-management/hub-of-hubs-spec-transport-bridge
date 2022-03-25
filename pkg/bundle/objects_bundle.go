@@ -9,6 +9,8 @@ type (
 	CreateObjectFunction func() metav1.Object
 	// CreateBundleFunction is a function that specifies how to create a bundle.
 	CreateBundleFunction func() ObjectsBundle
+	// ExtractObjectNameFunction is a function that specifies how to extract a name from an object.
+	ExtractObjectNameFunction func(metav1.Object) string
 )
 
 // ObjectsBundle bundles together a set of k8s objects to be sent to leaf hubs via transport layer.
@@ -17,4 +19,6 @@ type ObjectsBundle interface {
 	AddObject(object metav1.Object, objectUID string)
 	// AddDeletedObject adds a deleted object to the bundle.
 	AddDeletedObject(object metav1.Object)
+	// MergeBundle merges the content of another ObjectsBundle into the callee.
+	MergeBundle(other ObjectsBundle) error
 }
