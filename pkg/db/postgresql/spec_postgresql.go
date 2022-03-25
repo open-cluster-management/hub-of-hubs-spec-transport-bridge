@@ -224,7 +224,7 @@ func (p *PostgreSQL) GetUpdatedManagedClusterSetsTracking(ctx context.Context, t
 
 	// build mapping from entries in DB (don't need MCs)
 	rows, err := p.conn.Query(ctx, fmt.Sprintf(`SELECT cluster_set_name,leaf_hub_name FROM 
-		spec.%s WHERE updated_at::timestamp > timestamp '%s')`, tableName, timestamp.Format(time.RFC3339Nano)))
+		spec.%s WHERE updated_at::timestamp > timestamp '%s'`, tableName, timestamp.Format(time.RFC3339Nano)))
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to query table spec.%s - %w", tableName, err)
 	}

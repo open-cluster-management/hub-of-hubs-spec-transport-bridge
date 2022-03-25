@@ -58,7 +58,8 @@ type managedClusterSetsDBToTransportSyncer struct {
 func (syncer *managedClusterSetsDBToTransportSyncer) syncManagedClusterSetsBundles(ctx context.Context) bool {
 	lastUpdateTimestamp, err := syncer.db.GetLastUpdateTimestamp(ctx, syncer.dbTableName)
 	if err != nil {
-		syncer.log.Error(err, "unable to sync bundle to leaf hubs", "tableName", syncer.dbTableName)
+		syncer.log.Error(err, "unable to sync bundle to leaf hubs - failed to get timestamp",
+			"tableName", syncer.dbTableName)
 
 		return false
 	}
@@ -72,7 +73,8 @@ func (syncer *managedClusterSetsDBToTransportSyncer) syncManagedClusterSetsBundl
 	clusterSetToLeafHubsMap, lastUpdateTimestamp,
 		err := syncer.db.GetUpdatedManagedClusterSetsTracking(ctx, syncer.dbTableName, syncer.lastUpdateTimestamp)
 	if err != nil {
-		syncer.log.Error(err, "unable to sync bundle to leaf hubs", "tableName", syncer.dbTableName)
+		syncer.log.Error(err, "unable to sync bundle to leaf hubs - failed to get MCS tracking",
+			"tableName", syncer.dbTableName)
 
 		return false
 	}
@@ -80,7 +82,8 @@ func (syncer *managedClusterSetsDBToTransportSyncer) syncManagedClusterSetsBundl
 	// build leaf-hub -> MCS bundles map
 	leafHubToObjectsBundleMap, err := syncer.buildLeafHubToObjectsBundleMap(ctx, clusterSetToLeafHubsMap)
 	if err != nil {
-		syncer.log.Error(err, "unable to sync bundle to leaf hubs", "tableName", syncer.dbTableName)
+		syncer.log.Error(err, "unable to sync bundle to leaf hubs - failed to build objects map",
+			"tableName", syncer.dbTableName)
 
 		return false
 	}
