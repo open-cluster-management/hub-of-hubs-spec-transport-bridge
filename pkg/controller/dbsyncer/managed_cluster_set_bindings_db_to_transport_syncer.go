@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	clusterv1alpha1 "github.com/open-cluster-management/api/cluster/v1alpha1"
 	datatypes "github.com/stolostron/hub-of-hubs-data-types"
 	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/bundle"
 	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/db"
@@ -13,6 +12,7 @@ import (
 	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/intervalpolicy"
 	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/transport"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"open-cluster-management.io/api/cluster/v1beta1"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -31,7 +31,7 @@ func AddManagedClusterSetBindingsDBToTransportSyncer(mgr ctrl.Manager, db db.Spe
 			transportBundleKey: datatypes.ManagedClusterSetBindingsMsgKey,
 			intervalPolicy:     intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
 		},
-		createObjFunc:    func() metav1.Object { return &clusterv1alpha1.ManagedClusterSet{} },
+		createObjFunc:    func() metav1.Object { return &v1beta1.ManagedClusterSet{} },
 		createBundleFunc: bundle.NewBaseBundle,
 	}
 
@@ -66,9 +66,8 @@ func (syncer *managedClusterSetBindingsDBToTransportSyncer) syncManagedClusterSe
 
 	// if we got here, then the last update timestamp from db is after what we have in memory.
 	// this means something has changed in db, sync all per LH.
-	mappedManagedClusterSetBindingBundles, _, err := syncer.db.GetMappedObjectBundles(ctx,
-		managedClusterSetBindingsTableName, syncer.createBundleFunc,
-		syncer.createObjFunc, func(obj metav1.Object) string {
+	mappedManagedClusterSetBindingBundles, _, err := syncer.db.GetMappedObjectBundles(ctx, syncer.dbTableName,
+		syncer.createBundleFunc, syncer.createObjFunc, func(obj metav1.Object) string {
 			return obj.GetName()
 		})
 	if err != nil {

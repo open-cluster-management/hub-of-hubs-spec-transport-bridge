@@ -2,11 +2,9 @@ package dbsyncer
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
-	clusterv1alpha1 "github.com/open-cluster-management/api/cluster/v1alpha1"
 	datatypes "github.com/stolostron/hub-of-hubs-data-types"
 	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/bundle"
 	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/db"
@@ -14,13 +12,11 @@ import (
 	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/intervalpolicy"
 	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/transport"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"open-cluster-management.io/api/cluster/v1beta1"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 const managedClusterSetsTrackingTableName = "managed_cluster_sets_tracking"
-
-var errManagedClusterSetTrackingFoundButCRIsNot = errors.New("managed-cluster-set CR(s) does not exist, while a" +
-	" tracking is present")
 
 // AddManagedClusterSetsTrackingDBToTransportSyncer adds managed-cluster-sets-tracking db to transport syncer to the
 // manager. The syncer watches an MCS, LH -> MCs table and syncs Objects from two different tables when the first is
@@ -35,9 +31,9 @@ func AddManagedClusterSetsTrackingDBToTransportSyncer(mgr ctrl.Manager, db db.Sp
 			transport:      transport,
 			intervalPolicy: intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
 		},
-		createManagedClusterSetObjFunc: func() metav1.Object { return &clusterv1alpha1.ManagedClusterSet{} },
+		createManagedClusterSetObjFunc: func() metav1.Object { return &v1beta1.ManagedClusterSet{} },
 		createManagedClusterSetBindingObjFunc: func() metav1.Object {
-			return &clusterv1alpha1.ManagedClusterSetBinding{}
+			return &v1beta1.ManagedClusterSetBinding{}
 		},
 		createBundleFunc: bundle.NewBaseBundle,
 	}
@@ -83,7 +79,7 @@ func (syncer *managedClusterSetsTrackingDBToTransportSyncer) syncObjectsPerLeafH
 	}
 
 	// get LH -> MCS-binding bundles
-	managedClusterSetBindingBundles, err := syncer.getManagedClusterSetsBundles(ctx, clusterSetToLeafHubsMap)
+	managedClusterSetBindingBundles, err := syncer.getManagedClusterSetBindingsBundles(ctx, clusterSetToLeafHubsMap)
 	if err != nil {
 		syncer.log.Error(err, "failed to get managed-cluster-set bundles",
 			"tableName", syncer.dbTableName)
@@ -92,7 +88,7 @@ func (syncer *managedClusterSetsTrackingDBToTransportSyncer) syncObjectsPerLeafH
 	}
 
 	// get LH -> MCS bundles
-	managedClusterSetBundles, err := syncer.getManagedClusterSetBindingsBundles(ctx, clusterSetToLeafHubsMap)
+	managedClusterSetBundles, err := syncer.getManagedClusterSetsBundles(ctx, clusterSetToLeafHubsMap)
 	if err != nil {
 		syncer.log.Error(err, "failed to get managed-cluster-set-binding bundles",
 			"tableName", syncer.dbTableName)
