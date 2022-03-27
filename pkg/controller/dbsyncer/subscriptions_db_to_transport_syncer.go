@@ -23,7 +23,7 @@ func AddSubscriptionsDBToTransportSyncer(mgr ctrl.Manager, db db.SpecDB, transpo
 	syncInterval time.Duration) error {
 	dbToTransportSyncer := &genericObjectsDBToTransportSyncer{
 		genericDBToTransportSyncer: &genericDBToTransportSyncer{
-			log:                ctrl.Log.WithName("placements-db-to-transport-syncer"),
+			log:                ctrl.Log.WithName("subscriptions-db-to-transport-syncer"),
 			db:                 db,
 			dbTableName:        subscriptionsTableName,
 			transport:          transport,

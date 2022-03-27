@@ -27,6 +27,7 @@ func AddDBToTransportSyncers(mgr ctrl.Manager, specDB db.SpecDB, transportObj tr
 		dbsyncer.AddManagedClusterSetBindingsDBToTransportSyncer,
 		dbsyncer.AddManagedClusterSetsDBToTransportSyncer,
 		dbsyncer.AddManagedClusterSetsTrackingDBToTransportSyncer,
+		dbsyncer.AddPlacementsDBToTransportSyncer,
 	}
 	for _, addDBSyncerFunction := range addDBSyncerFunctions {
 		if err := addDBSyncerFunction(mgr, specDB, transportObj, syncInterval); err != nil {
