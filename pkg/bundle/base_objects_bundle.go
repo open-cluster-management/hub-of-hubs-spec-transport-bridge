@@ -4,7 +4,6 @@ import (
 	"errors"
 
 	datatypes "github.com/stolostron/hub-of-hubs-data-types"
-	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/helpers"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -25,7 +24,7 @@ type baseBundle struct {
 
 // AddObject adds an object to the bundle.
 func (b *baseBundle) AddObject(object metav1.Object, objectUID string) {
-	helpers.SetMetaDataAnnotation(object, datatypes.OriginOwnerReferenceAnnotation, objectUID)
+	setMetaDataAnnotation(object, datatypes.OriginOwnerReferenceAnnotation, objectUID)
 	b.Objects = append(b.Objects, object)
 }
 
@@ -49,4 +48,16 @@ func (b *baseBundle) MergeBundle(other ObjectsBundle) error {
 	b.DeletedObjects = append(b.DeletedObjects, otherBaseBundle.DeletedObjects...)
 
 	return nil
+}
+
+// setMetaDataAnnotation sets metadata annotation on the given object.
+func setMetaDataAnnotation(object metav1.Object, key string, value string) {
+	annotations := object.GetAnnotations()
+	if annotations == nil {
+		annotations = make(map[string]string)
+	}
+
+	annotations[key] = value
+
+	object.SetAnnotations(annotations)
 }

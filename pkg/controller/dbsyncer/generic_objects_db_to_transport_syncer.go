@@ -2,12 +2,14 @@ package dbsyncer
 
 import (
 	"context"
-	"encoding/json"
 	"time"
 
 	datatypes "github.com/stolostron/hub-of-hubs-data-types"
 	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/bundle"
+	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/helpers"
 )
+
+const broadcast = ""
 
 type genericObjectsDBToTransportSyncer struct {
 	*genericDBToTransportSyncer
@@ -48,11 +50,8 @@ func (syncer *genericObjectsDBToTransportSyncer) syncObjectsBundle(ctx context.C
 
 func (syncer *genericObjectsDBToTransportSyncer) syncToTransport(objID string, objType string, timestamp *time.Time,
 	payload bundle.ObjectsBundle) {
-	payloadBytes, err := json.Marshal(payload)
-	if err != nil {
+	if err := helpers.SyncObjectsToTransport(syncer.transport, broadcast, objID, objType, timestamp,
+		payload); err != nil {
 		syncer.log.Error(err, "failed to sync object", "objectId", objID, "objectType", objType)
-		return
 	}
-
-	syncer.transport.SendAsync("", objID, objType, timestamp.Format(timeFormat), payloadBytes)
 }
