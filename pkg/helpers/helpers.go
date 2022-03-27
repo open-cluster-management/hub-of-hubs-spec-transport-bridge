@@ -1,17 +1,25 @@
 package helpers
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"encoding/json"
+	"fmt"
+	"time"
+
+	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/bundle"
+	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/transport"
 )
 
-// SetMetaDataAnnotation sets metadata annotation on the given object.
-func SetMetaDataAnnotation(object metav1.Object, key string, value string) {
-	annotations := object.GetAnnotations()
-	if annotations == nil {
-		annotations = make(map[string]string)
+const timeFormat = "2006-01-02_15-04-05.000000"
+
+// SyncObjectsToTransport syncs an objects bundle to transport.
+func SyncObjectsToTransport(transport transport.Transport, destination string, objID string,
+	objType string, timestamp *time.Time, payload bundle.ObjectsBundle) error {
+	payloadBytes, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("failed to sync to transport - %w", err)
 	}
 
-	annotations[key] = value
+	transport.SendAsync(destination, objID, objType, timestamp.Format(timeFormat), payloadBytes)
 
-	object.SetAnnotations(annotations)
+	return nil
 }

@@ -15,9 +15,8 @@ import (
 )
 
 const (
-	managedClusterLabelsDBTableName     = "managed_clusters_labels"
-	managedClusterSetLabelKey           = "cluster.open-cluster-management.io/clusterset"
-	managedClusterSetsTrackingTableName = "managed_cluster_sets_tracking"
+	managedClusterLabelsDBTableName = "managed_clusters_labels"
+	managedClusterSetLabelKey       = "cluster.open-cluster-management.io/clusterset"
 )
 
 // AddManagedClusterLabelsDBToTransportSyncer adds managed-cluster labels db to transport syncer to the manager.

@@ -2,7 +2,6 @@ package dbsyncer
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -10,6 +9,7 @@ import (
 	datatypes "github.com/stolostron/hub-of-hubs-data-types"
 	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/bundle"
 	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/db"
+	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/helpers"
 	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/intervalpolicy"
 	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/transport"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,12 +26,12 @@ func AddManagedClusterSetBindingsDBToTransportSyncer(mgr ctrl.Manager, db db.Spe
 		genericDBToTransportSyncer: &genericDBToTransportSyncer{
 			log:                ctrl.Log.WithName("managed-cluster-set-bindings-db-to-transport-syncer"),
 			db:                 db,
-			dbTableName:        managedClusterSetsTrackingTableName, // reconcile by tracking table
+			dbTableName:        managedClusterSetBindingsTableName,
 			transport:          transport,
 			transportBundleKey: datatypes.ManagedClusterSetBindingsMsgKey,
 			intervalPolicy:     intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
 		},
-		createObjFunc:    func() metav1.Object { return &clusterv1alpha1.ManagedClusterSetBinding{} },
+		createObjFunc:    func() metav1.Object { return &clusterv1alpha1.ManagedClusterSet{} },
 		createBundleFunc: bundle.NewBaseBundle,
 	}
 
@@ -50,13 +50,12 @@ type managedClusterSetBindingsDBToTransportSyncer struct {
 	createBundleFunc bundle.CreateBundleFunction
 }
 
-// syncManagedClusterSetBindingsBundles is invoked whenever a tracking entry is changed. Once a change is found,
-// the affected ManagedClusterSetBindings are read from the resource's spec table and shipped out as an objects bundle.
 func (syncer *managedClusterSetBindingsDBToTransportSyncer) syncManagedClusterSetBindingsBundles(ctx context.Context,
 ) bool {
 	lastUpdateTimestamp, err := syncer.db.GetLastUpdateTimestamp(ctx, syncer.dbTableName)
 	if err != nil {
-		syncer.log.Error(err, "unable to sync bundle to leaf hubs", "tableName", syncer.dbTableName)
+		syncer.log.Error(err, "unable to sync bundle to leaf hubs - failed to get timestamp",
+			"tableName", syncer.dbTableName)
 
 		return false
 	}
@@ -65,7 +64,8 @@ func (syncer *managedClusterSetBindingsDBToTransportSyncer) syncManagedClusterSe
 		return false
 	}
 
-	// get MCS-binding bundles mapped by MCS name
+	// if we got here, then the last update timestamp from db is after what we have in memory.
+	// this means something has changed in db, sync all per LH.
 	mappedManagedClusterSetBindingBundles, _, err := syncer.db.GetMappedObjectBundles(ctx,
 		managedClusterSetBindingsTableName, syncer.createBundleFunc,
 		syncer.createObjFunc, func(obj metav1.Object) string {
@@ -83,21 +83,27 @@ func (syncer *managedClusterSetBindingsDBToTransportSyncer) syncManagedClusterSe
 		return false
 	}
 
-	// if we got here, then the last update timestamp from db is after what we have in memory.
-	// this means something has changed in db, get updated MCS tracking and sync MCS-binding objects to transport.
-	clusterSetToLeafHubsMap, lastUpdateTimestamp,
-		err := syncer.db.GetUpdatedManagedClusterSetsTracking(ctx, syncer.dbTableName, syncer.lastUpdateTimestamp)
+	return syncer.syncToLeafHubs(ctx, mappedManagedClusterSetBindingBundles, lastUpdateTimestamp)
+}
+
+func (syncer *managedClusterSetBindingsDBToTransportSyncer) syncToLeafHubs(ctx context.Context,
+	mappedObjectBundles map[string]bundle.ObjectsBundle, lastUpdateTimestamp *time.Time) bool {
+	// get ALL cluster-set -> leaf-hubs tracking
+	clusterSetToLeafHubsMap, _,
+		err := syncer.db.GetUpdatedManagedClusterSetsTracking(ctx, managedClusterSetsTrackingTableName, &time.Time{})
 	if err != nil {
-		syncer.log.Error(err, "unable to sync bundle to leaf hubs", "tableName", syncer.dbTableName)
+		syncer.log.Error(err, "unable to sync bundle to leaf hubs - failed to get MCS tracking",
+			"tableName", syncer.dbTableName)
 
 		return false
 	}
 
-	// build leaf-hub -> MCS-binding bundles map
+	// build leaf-hub -> MCS bundles map
 	leafHubToObjectsBundleMap, err := syncer.buildLeafHubToObjectsBundleMap(ctx, clusterSetToLeafHubsMap,
-		mappedManagedClusterSetBindingBundles)
+		mappedObjectBundles)
 	if err != nil {
-		syncer.log.Error(err, "unable to sync bundle to leaf hubs", "tableName", syncer.dbTableName)
+		syncer.log.Error(err, "unable to sync bundle to leaf hubs - failed to build objects map",
+			"tableName", syncer.dbTableName)
 
 		return false
 	}
@@ -114,26 +120,15 @@ func (syncer *managedClusterSetBindingsDBToTransportSyncer) syncManagedClusterSe
 	return true
 }
 
-func (syncer *managedClusterSetBindingsDBToTransportSyncer) syncToTransport(destination string, objID string,
-	objType string, timestamp *time.Time, payload bundle.ObjectsBundle) {
-	payloadBytes, err := json.Marshal(payload)
-	if err != nil {
-		syncer.log.Error(err, "failed to sync object", "objectId", objID, "objectType", objType)
-		return
-	}
-
-	syncer.transport.SendAsync(destination, objID, objType, timestamp.Format(timeFormat), payloadBytes)
-}
-
 func (syncer *managedClusterSetBindingsDBToTransportSyncer) buildLeafHubToObjectsBundleMap(_ context.Context,
 	clusterSetToLeafHubsMap map[string][]string,
-	mappedManagedClusterSetBindingBundles map[string]bundle.ObjectsBundle) (map[string]bundle.ObjectsBundle, error) {
+	mappedObjectBundles map[string]bundle.ObjectsBundle) (map[string]bundle.ObjectsBundle, error) {
 	leafHubToObjectsBundleMap := map[string]bundle.ObjectsBundle{}
 	// build lh -> MCS bundle
 	for clusterSetName, LeafHubs := range clusterSetToLeafHubsMap {
-		objectsBundle, found := mappedManagedClusterSetBindingBundles[clusterSetName]
+		objectsBundle, found := mappedObjectBundles[clusterSetName]
 		if !found {
-			return nil, errManagedClusterSetTrackingFoundButCRIsNot
+			continue
 		}
 		// add objects bundle for all leaf hubs in mapping
 		for _, leafHub := range LeafHubs {
@@ -143,11 +138,19 @@ func (syncer *managedClusterSetBindingsDBToTransportSyncer) buildLeafHubToObject
 			}
 			// merge content
 			if err := leafHubToObjectsBundleMap[leafHub].MergeBundle(objectsBundle); err != nil {
-				syncer.log.Error(err, "failed to merge ManagedClusterSet bundles", "clusterSetName", clusterSetName,
-					"leafHubName", leafHub)
+				return nil, fmt.Errorf("failed to merge object bundles : clusterSetName {%s}, leafHubName {%s} - %w",
+					clusterSetName, leafHub, err)
 			}
 		}
 	}
 
 	return leafHubToObjectsBundleMap, nil
+}
+
+func (syncer *managedClusterSetBindingsDBToTransportSyncer) syncToTransport(destination string, objID string,
+	objType string, timestamp *time.Time, payload bundle.ObjectsBundle) {
+	if err := helpers.SyncObjectsToTransport(syncer.transport, destination, objID, objType, timestamp,
+		payload); err != nil {
+		syncer.log.Error(err, "failed to sync object", "objectId", objID, "objectType", objType)
+	}
 }
