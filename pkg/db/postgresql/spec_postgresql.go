@@ -12,6 +12,8 @@ import (
 	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/bundle"
 )
 
+var errOptimisticConcurrencyUpdateFailed = errors.New("zero rows were affected by an optimistic concurrency update")
+
 // GetLastUpdateTimestamp returns the last update timestamp of a specific table.
 func (p *PostgreSQL) GetLastUpdateTimestamp(ctx context.Context, tableName string) (*time.Time, error) {
 	var lastTimestamp time.Time
@@ -203,10 +205,12 @@ func (p *PostgreSQL) UpdateDeletedLabelKeysOptimistically(ctx context.Context, t
 			return fmt.Errorf("failed to marshal deleted labels - %w", err)
 		}
 
-		if _, err := p.conn.Exec(ctx, fmt.Sprintf(`UPDATE spec.%s SET updated_at=now(),deleted_label_keys=$1,version=$2 
+		if commandTag, err := p.conn.Exec(ctx, fmt.Sprintf(`UPDATE spec.%s SET updated_at=now(),deleted_label_keys=$1,version=$2 
 		WHERE leaf_hub_name=$3 AND managed_cluster_name=$4 AND version=$5`, tableName), deletedLabelsJSON,
 			readVersion+1, leafHubName, managedClusterName, readVersion); err != nil {
 			return fmt.Errorf("failed to update managed cluster labels row in spec.%s - %w", tableName, err)
+		} else if commandTag.RowsAffected() == 0 {
+			return errOptimisticConcurrencyUpdateFailed
 		}
 	}
 
@@ -420,10 +424,12 @@ func (p *PostgreSQL) GetEntriesWithoutLeafHubName(ctx context.Context,
 // UpdateLeafHubNamesOptimistically updates leaf hub name for a given managed cluster under optimistic concurrency.
 func (p *PostgreSQL) UpdateLeafHubNamesOptimistically(ctx context.Context, tableName string, readVersion int64,
 	managedClusterName string, leafHubName string) error {
-	if _, err := p.conn.Exec(ctx, fmt.Sprintf(`UPDATE spec.%s SET updated_at=now(),leaf_hub_name=$1,version=$2 
+	if commandTag, err := p.conn.Exec(ctx, fmt.Sprintf(`UPDATE spec.%s SET updated_at=now(),leaf_hub_name=$1,version=$2 
 				WHERE managed_cluster_name=$3 AND version=$4`, tableName), leafHubName, readVersion+1,
 		managedClusterName, readVersion); err != nil {
 		return fmt.Errorf("failed to update managed cluster labels row in spec.%s - %w", tableName, err)
+	} else if commandTag.RowsAffected() == 0 {
+		return errOptimisticConcurrencyUpdateFailed
 	}
 
 	return nil
