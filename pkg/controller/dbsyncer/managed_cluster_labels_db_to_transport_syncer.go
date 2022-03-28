@@ -62,7 +62,7 @@ func (syncer *managedClusterLabelsDBToTransportSyncer) syncManagedClusterLabelsB
 
 	// if we got here, then the last update timestamp from db is after what we have in memory.
 	// this means something has changed in db, syncing to transport.
-	leafHubToLabelsSpecBundleMap, lastUpdateTimestamp,
+	leafHubToLabelsSpecBundleMap, _,
 		err := syncer.db.GetUpdatedManagedClusterLabelsBundles(ctx, syncer.dbTableName, syncer.lastUpdateTimestamp)
 	if err != nil {
 		syncer.log.Error(err, "unable to sync bundle to leaf hubs", "tableName", syncer.dbTableName)
