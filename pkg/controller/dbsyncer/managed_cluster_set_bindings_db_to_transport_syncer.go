@@ -79,6 +79,7 @@ func (syncer *managedClusterSetBindingsDBToTransportSyncer) syncManagedClusterSe
 
 	// if there are no bindings, don't proceed
 	if len(mappedManagedClusterSetBindingBundles) == 0 {
+		syncer.lastUpdateTimestamp = lastUpdateTimestamp
 		return false
 	}
 
