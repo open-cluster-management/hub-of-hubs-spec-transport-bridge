@@ -12,8 +12,9 @@ import (
 )
 
 const (
-	managedClusterLabelsSpecDBTableName   = "managed_clusters_labels"
-	managedClusterLabelsStatusDBTableName = "managed_clusters"
+	managedClusterLabelsSpecDBTableName        = "managed_clusters_labels"
+	managedClusterLabelsStatusDBTableName      = "managed_clusters"
+	deletedLabelKeysTrimmingIntervalMultiplier = 100 // low frequency
 )
 
 // AddManagedClusterLabelsStatusWatcher adds managedClusterLabelsStatusWatcher to the manager.
@@ -62,18 +63,21 @@ func (watcher *managedClusterLabelsStatusWatcher) init(ctx context.Context) {
 }
 
 func (watcher *managedClusterLabelsStatusWatcher) updateDeletedLabelsPeriodically(ctx context.Context) {
-	ticker := time.NewTicker(watcher.intervalPolicy.GetInterval())
+	hubNameFillTicker := time.NewTicker(watcher.intervalPolicy.GetInterval())
+	labelsTrimmerTicker := time.NewTicker(watcher.intervalPolicy.GetInterval() *
+		deletedLabelKeysTrimmingIntervalMultiplier)
 
 	for {
 		select {
 		case <-ctx.Done(): // we have received a signal to stop
-			ticker.Stop()
+			hubNameFillTicker.Stop()
+			labelsTrimmerTicker.Stop()
 			return
 
-		case <-ticker.C:
+		case <-hubNameFillTicker.C:
 			// define timeout of max execution interval on the update function
 			ctxWithTimeout, cancelFunc := context.WithTimeout(ctx, watcher.intervalPolicy.GetMaxInterval())
-			updated := watcher.updateSpecFromStatus(ctxWithTimeout)
+			updated := watcher.fillMissingLeafHubNames(ctxWithTimeout)
 
 			cancelFunc() // cancel child ctx and is used to cleanup resources once context expires or update is done.
 
@@ -92,18 +96,18 @@ func (watcher *managedClusterLabelsStatusWatcher) updateDeletedLabelsPeriodicall
 
 			// reset ticker if needed
 			if currentInterval != reevaluatedInterval {
-				ticker.Reset(reevaluatedInterval)
+				hubNameFillTicker.Reset(reevaluatedInterval)
 				watcher.log.Info(fmt.Sprintf("update interval has been reset to %s", reevaluatedInterval.String()))
 			}
+
+		case <-labelsTrimmerTicker.C:
+			// define timeout of max execution interval on the update function
+			ctxWithTimeout, cancelFunc := context.WithTimeout(ctx, watcher.intervalPolicy.GetMaxInterval())
+			watcher.trimDeletedLabelsByStatus(ctxWithTimeout)
+
+			cancelFunc() // cancel child ctx and is used to cleanup resources once context expires or update is done.
 		}
 	}
-}
-
-func (watcher *managedClusterLabelsStatusWatcher) updateSpecFromStatus(ctx context.Context) bool {
-	filledMissingLeafHubs := watcher.fillMissingLeafHubNames(ctx)
-	trimmedDeletedLabels := watcher.trimDeletedLabelsByStatus(ctx)
-
-	return filledMissingLeafHubs && trimmedDeletedLabels
 }
 
 func (watcher *managedClusterLabelsStatusWatcher) trimDeletedLabelsByStatus(ctx context.Context) bool {

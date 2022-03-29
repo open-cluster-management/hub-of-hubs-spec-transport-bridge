@@ -69,7 +69,7 @@ func (syncer *managedClusterSetsTrackingDBToTransportSyncer) syncObjectsPerLeafH
 
 	// if we got here, then the last update timestamp from db is after what we have in memory.
 	// this means something has changed in db, get updated MCS tracking and sync MCS objects to transport.
-	clusterSetToLeafHubsMap, lastUpdateTimestamp,
+	clusterSetToLeafHubsMap, _,
 		err := syncer.db.GetUpdatedManagedClusterSetsTracking(ctx, syncer.dbTableName, syncer.lastUpdateTimestamp)
 	if err != nil {
 		syncer.log.Error(err, "unable to sync bundle to leaf hubs - failed to get MCS tracking",
