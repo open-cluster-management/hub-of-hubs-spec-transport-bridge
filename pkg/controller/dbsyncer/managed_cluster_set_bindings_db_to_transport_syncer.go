@@ -31,7 +31,7 @@ func AddManagedClusterSetBindingsDBToTransportSyncer(mgr ctrl.Manager, db db.Spe
 			transportBundleKey: datatypes.ManagedClusterSetBindingsMsgKey,
 			intervalPolicy:     intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
 		},
-		createObjFunc:    func() metav1.Object { return &v1beta1.ManagedClusterSet{} },
+		createObjFunc:    func() metav1.Object { return &v1beta1.ManagedClusterSetBinding{} },
 		createBundleFunc: bundle.NewBaseBundle,
 	}
 
