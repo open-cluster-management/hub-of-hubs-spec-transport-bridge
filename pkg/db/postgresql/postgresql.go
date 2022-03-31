@@ -46,7 +46,9 @@ func (p *PostgreSQL) GetBundle(ctx context.Context, tableName string, createObjF
 		return nil, err
 	}
 
-	rows, _ := p.conn.Query(ctx, fmt.Sprintf(`SELECT id,payload,deleted FROM spec.%s`, tableName))
+	rows, _ := p.conn.Query(ctx, fmt.Sprintf(`SELECT id,payload,deleted FROM spec.%s WHERE
+		payload->'metadata'->'annotations'->'hub-of-hubs.open-cluster-management.io/local-resource' IS NULL`,
+		tableName))
 	for rows.Next() {
 		var (
 			id      string
@@ -72,7 +74,9 @@ func (p *PostgreSQL) GetBundle(ctx context.Context, tableName string, createObjF
 func (p *PostgreSQL) GetLastUpdateTimestamp(ctx context.Context, tableName string) (*time.Time, error) {
 	var lastTimestamp time.Time
 	err := p.conn.QueryRow(ctx,
-		fmt.Sprintf(`SELECT MAX(updated_at) FROM spec.%s`, tableName)).Scan(&lastTimestamp)
+		fmt.Sprintf(`SELECT MAX(updated_at) FROM spec.%s WHERE
+			payload->'metadata'->'annotations'->'hub-of-hubs.open-cluster-management.io/local-resource' IS NULL`,
+			tableName)).Scan(&lastTimestamp)
 
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, fmt.Errorf("no objects in the table spec.%s - %w", tableName, err)
