@@ -2,6 +2,7 @@ package dbsyncer
 
 import (
 	"fmt"
+	datatypes "github.com/stolostron/hub-of-hubs-data-types"
 	"time"
 
 	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/bundle"
@@ -13,10 +14,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-const (
-	subscriptionsTableName = "subscriptions"
-	subscriptionMsgKey     = "Subscriptions"
-)
+const subscriptionsTableName = "subscriptions"
 
 // AddSubscriptionsDBToTransportSyncer adds subscriptions db to transport syncer to the manager.
 func AddSubscriptionsDBToTransportSyncer(mgr ctrl.Manager, db db.SpecDB, transport transport.Transport,
@@ -27,7 +25,7 @@ func AddSubscriptionsDBToTransportSyncer(mgr ctrl.Manager, db db.SpecDB, transpo
 			db:                 db,
 			dbTableName:        subscriptionsTableName,
 			transport:          transport,
-			transportBundleKey: subscriptionMsgKey,
+			transportBundleKey: datatypes.SubscriptionsMsgKey,
 			intervalPolicy:     intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
 		},
 		createObjFunc:    func() metav1.Object { return &subscriptionsv1.Subscription{} },
