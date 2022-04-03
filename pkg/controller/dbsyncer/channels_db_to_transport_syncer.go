@@ -2,7 +2,6 @@ package dbsyncer
 
 import (
 	"fmt"
-	datatypes "github.com/stolostron/hub-of-hubs-data-types"
 	"time"
 
 	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/bundle"
@@ -14,7 +13,10 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-const channelsTableName = "channels"
+const (
+	channelsTableName = "channels"
+	channelsMsgKey    = "Channels"
+)
 
 // AddChannelsDBToTransportSyncer adds channels db to transport syncer to the manager.
 func AddChannelsDBToTransportSyncer(mgr ctrl.Manager, db db.SpecDB, transport transport.Transport,
@@ -25,7 +27,7 @@ func AddChannelsDBToTransportSyncer(mgr ctrl.Manager, db db.SpecDB, transport tr
 			db:                 db,
 			dbTableName:        channelsTableName,
 			transport:          transport,
-			transportBundleKey: datatypes.ChannelsMsgKey,
+			transportBundleKey: channelsMsgKey,
 			intervalPolicy:     intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
 		},
 		createObjFunc:    func() metav1.Object { return &channelsv1.Channel{} },
