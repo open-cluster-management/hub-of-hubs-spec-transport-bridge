@@ -5,7 +5,6 @@ import (
 	"time"
 
 	policiesv1 "github.com/open-cluster-management/governance-policy-propagator/api/v1"
-	datatypes "github.com/stolostron/hub-of-hubs-data-types"
 	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/bundle"
 	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/db"
 	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/intervalpolicy"
@@ -14,7 +13,10 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-const placementBindingsTableName = "placementbindings"
+const (
+	placementBindingsTableName = "placementbindings"
+	placementBindingsMsgKey    = "PlacementBindings"
+)
 
 // AddPlacementBindingsDBToTransportSyncer adds placement bindings db to transport syncer to the manager.
 func AddPlacementBindingsDBToTransportSyncer(mgr ctrl.Manager, db db.SpecDB, transport transport.Transport,
@@ -25,7 +27,7 @@ func AddPlacementBindingsDBToTransportSyncer(mgr ctrl.Manager, db db.SpecDB, tra
 			db:                 db,
 			dbTableName:        placementBindingsTableName,
 			transport:          transport,
-			transportBundleKey: datatypes.PlacementBindingsMsgKey,
+			transportBundleKey: placementBindingsMsgKey,
 			intervalPolicy:     intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
 		},
 		createObjFunc:    func() metav1.Object { return &policiesv1.PlacementBinding{} },

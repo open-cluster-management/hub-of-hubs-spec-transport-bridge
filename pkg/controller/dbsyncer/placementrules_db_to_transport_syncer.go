@@ -5,7 +5,6 @@ import (
 	"time"
 
 	appsv1 "github.com/open-cluster-management/multicloud-operators-placementrule/pkg/apis/apps/v1"
-	datatypes "github.com/stolostron/hub-of-hubs-data-types"
 	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/bundle"
 	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/db"
 	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/intervalpolicy"
@@ -14,7 +13,10 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-const placementRulesTableName = "placementrules"
+const (
+	placementRulesTableName = "placementrules"
+	placementRulesMsgKey    = "PlacementRules"
+)
 
 // AddPlacementRulesDBToTransportSyncer adds placement rules db to transport syncer to the manager.
 func AddPlacementRulesDBToTransportSyncer(mgr ctrl.Manager, db db.SpecDB, transport transport.Transport,
@@ -25,7 +27,7 @@ func AddPlacementRulesDBToTransportSyncer(mgr ctrl.Manager, db db.SpecDB, transp
 			db:                 db,
 			dbTableName:        placementRulesTableName,
 			transport:          transport,
-			transportBundleKey: datatypes.PlacementRulesMsgKey,
+			transportBundleKey: placementRulesMsgKey,
 			intervalPolicy:     intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
 		},
 		createObjFunc:    func() metav1.Object { return &appsv1.PlacementRule{} },

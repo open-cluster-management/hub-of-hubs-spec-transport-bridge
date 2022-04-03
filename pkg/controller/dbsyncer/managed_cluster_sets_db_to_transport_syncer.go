@@ -16,7 +16,10 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-const managedClusterSetsTableName = "managedclustersets"
+const (
+	managedClusterSetsTableName = "managedclustersets"
+	managedClusterSetsMsgKey    = "ManagedClusterSets"
+)
 
 // AddManagedClusterSetsDBToTransportSyncer adds managed-cluster-sets db to transport syncer to the manager.
 func AddManagedClusterSetsDBToTransportSyncer(mgr ctrl.Manager, db db.SpecDB, transport transport.Transport,
@@ -27,7 +30,7 @@ func AddManagedClusterSetsDBToTransportSyncer(mgr ctrl.Manager, db db.SpecDB, tr
 			db:                 db,
 			dbTableName:        managedClusterSetsTableName,
 			transport:          transport,
-			transportBundleKey: datatypes.ManagedClusterSetsMsgKey,
+			transportBundleKey: managedClusterSetsMsgKey,
 			intervalPolicy:     intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
 		},
 		createObjFunc:    func() metav1.Object { return &v1beta1.ManagedClusterSet{} },

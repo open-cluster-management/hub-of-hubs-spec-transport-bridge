@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	datatypes "github.com/stolostron/hub-of-hubs-data-types"
 	configv1 "github.com/stolostron/hub-of-hubs-data-types/apis/config/v1"
 	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/bundle"
 	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/db"
@@ -16,6 +15,7 @@ import (
 
 const (
 	configTableName = "configs"
+	configMsgKey    = "Config"
 )
 
 // AddHoHConfigDBToTransportSyncer adds hub-of-hubs config db to transport syncer to the manager.
@@ -27,7 +27,7 @@ func AddHoHConfigDBToTransportSyncer(mgr ctrl.Manager, db db.SpecDB, transport t
 			db:                 db,
 			dbTableName:        configTableName,
 			transport:          transport,
-			transportBundleKey: datatypes.Config,
+			transportBundleKey: configMsgKey,
 			intervalPolicy:     intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
 		},
 		createObjFunc:    func() metav1.Object { return &configv1.Config{} },
