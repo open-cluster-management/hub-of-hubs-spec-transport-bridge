@@ -13,17 +13,16 @@ import (
 
 // AddDBToTransportSyncers adds the controllers that send info from DB to transport layer to the Manager.
 func AddDBToTransportSyncers(mgr ctrl.Manager, specDB db.SpecDB, transportObj transport.Transport,
-	syncInterval time.Duration,
-) error {
+	syncInterval time.Duration) error {
 	addDBSyncerFunctions := []func(ctrl.Manager, db.SpecDB, transport.Transport, time.Duration) error{
 		dbsyncer.AddHoHConfigDBToTransportSyncer,
 		dbsyncer.AddPoliciesDBToTransportSyncer,
 		dbsyncer.AddPlacementRulesDBToTransportSyncer,
 		dbsyncer.AddPlacementBindingsDBToTransportSyncer,
-		dbsyncer.AddManagedClusterLabelsDBToTransportSyncer,
 		dbsyncer.AddApplicationsDBToTransportSyncer,
-		dbsyncer.AddChannelsDBToTransportSyncer,
 		dbsyncer.AddSubscriptionsDBToTransportSyncer,
+		dbsyncer.AddChannelsDBToTransportSyncer,
+		dbsyncer.AddManagedClusterLabelsDBToTransportSyncer,
 		dbsyncer.AddManagedClusterSetBindingsDBToTransportSyncer,
 		dbsyncer.AddManagedClusterSetsDBToTransportSyncer,
 		dbsyncer.AddManagedClusterSetsTrackingDBToTransportSyncer,

@@ -61,17 +61,6 @@ python -c "import sys, urllib as ul; print ul.quote_plus(sys.argv[1])" 'YourPass
     ```
     $ export TRANSPORT_TYPE=...
     ```
-
-1. If you set sync-service as transport, set the following:
-    1. Set the `SYNC_SERVICE_HOST` environment variable to hold the CSS host.
-        ```
-        $ export SYNC_SERVICE_HOST=...
-        ```
-
-    1. Set the `SYNC_SERVICE_PORT` environment variable to hold the CSS port.
-        ```
-        $ export SYNC_SERVICE_PORT=...
-        ```
     
 1.  Run the following command to deploy the `hub-of-hubs-spec-transport-bridge` to your hub of hubs cluster:  
     ```
