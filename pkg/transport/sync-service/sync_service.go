@@ -124,11 +124,14 @@ func (s *SyncService) distributeMessages() {
 			return
 		case msg := <-s.msgChan:
 			objectMetaData := client.ObjectMetaData{
-				ObjectID:    fmt.Sprintf("%s.%s", msg.Destination, msg.ID),
+				ObjectID:    msg.ID,
 				ObjectType:  msg.MsgType,
 				Version:     msg.Version,
 				Description: fmt.Sprintf("%s:%s", compressionHeader, s.compressor.GetType()),
-				DestID:      msg.Destination,
+				DestID:      msg.Destination, // if broadcast then empty, works as usual.
+			}
+			if len(msg.Destination) > 0 { // empty destination means broadcast. only if specific to a hub, modify obj id
+				objectMetaData.ObjectID = fmt.Sprintf("%s.%s", msg.Destination, msg.ID)
 			}
 
 			if err := s.client.UpdateObject(&objectMetaData); err != nil {
