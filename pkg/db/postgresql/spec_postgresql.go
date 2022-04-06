@@ -36,11 +36,11 @@ func (p *PostgreSQL) GetObjectsBundle(ctx context.Context, tableName string, cre
 	}
 
 	rows, err := p.conn.Query(ctx, fmt.Sprintf(`SELECT id,payload,deleted FROM spec.%s`, tableName))
-	defer rows.Close()
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to query table spec.%s - %w", tableName, err)
 	}
+
+	defer rows.Close()
 
 	for rows.Next() {
 		var (
@@ -75,11 +75,11 @@ func (p *PostgreSQL) GetMappedObjectBundles(ctx context.Context, tableName strin
 	mappedObjectBundles := map[string]bundle.ObjectsBundle{}
 
 	rows, err := p.conn.Query(ctx, fmt.Sprintf(`SELECT id,payload,deleted FROM spec.%s`, tableName))
-	defer rows.Close()
-
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to query table spec.%s - %w", tableName, err)
 	}
+
+	defer rows.Close()
 
 	for rows.Next() {
 		var (
@@ -124,6 +124,8 @@ from spec.%s WHERE updated_at::timestamp > timestamp '%s')`, tableName, tableNam
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to query table spec.%s - %w", tableName, err)
 	}
+
+	defer rows.Close()
 
 	leafHubToLabelsSpecBundleMap, err := p.getLabelsSpecBundlesFromRows(rows)
 	if err != nil {
@@ -182,7 +184,7 @@ func (p *PostgreSQL) getLabelsSpecBundlesFromRows(rows pgx.Rows) (map[string]*sp
 		// append entry to bundle
 		managedClusterLabelsSpecBundle.Objects = append(managedClusterLabelsSpecBundle.Objects,
 			&spec.ManagedClusterLabelsSpec{
-				Name:             managedClusterName,
+				ClusterName:      managedClusterName,
 				Labels:           labels,
 				DeletedLabelKeys: deletedLabelKeys,
 				UpdateTimestamp:  updatedAt,
@@ -210,8 +212,8 @@ func (p *PostgreSQL) UpdateDeletedLabelKeysOptimistically(ctx context.Context, t
 			return fmt.Errorf("failed to marshal deleted labels - %w", err)
 		}
 
-		if commandTag, err := p.conn.Exec(ctx, fmt.Sprintf(`UPDATE spec.%s SET updated_at=now(),deleted_label_keys=$1,version=$2 
-		WHERE leaf_hub_name=$3 AND managed_cluster_name=$4 AND version=$5`, tableName), deletedLabelsJSON,
+		if commandTag, err := p.conn.Exec(ctx, fmt.Sprintf(`UPDATE spec.%s SET updated_at=now(),deleted_label_keys=$1,
+		version=$2	WHERE leaf_hub_name=$3 AND managed_cluster_name=$4 AND version=$5`, tableName), deletedLabelsJSON,
 			readVersion+1, leafHubName, managedClusterName, readVersion); err != nil {
 			return fmt.Errorf("failed to update managed cluster labels row in spec.%s - %w", tableName, err)
 		} else if commandTag.RowsAffected() == 0 {
@@ -234,11 +236,11 @@ func (p *PostgreSQL) GetUpdatedManagedClusterSetsTracking(ctx context.Context, t
 	// build mapping from entries in DB (don't need MCs)
 	rows, err := p.conn.Query(ctx, fmt.Sprintf(`SELECT cluster_set_name,leaf_hub_name FROM 
 		spec.%s WHERE updated_at::timestamp > timestamp '%s'`, tableName, timestamp.Format(time.RFC3339Nano)))
-	defer rows.Close()
-
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to query table spec.%s - %w", tableName, err)
 	}
+
+	defer rows.Close()
 
 	clusterSetToLeafHubsMap := map[string][]string{}
 
@@ -290,11 +292,11 @@ func (p *PostgreSQL) AddManagedClusterSetTracking(ctx context.Context, tableName
 	// read MCS, LH entry to update it
 	rows, err := p.conn.Query(ctx, fmt.Sprintf(`SELECT managed_clusters FROM spec.%s WHERE 
 		cluster_set_name=$1 AND leaf_hub_name=$2`, tableName), clusterSetName, leafHubName)
-	defer rows.Close()
-
 	if err != nil {
 		return fmt.Errorf("failed to read from spec.%s - %w", tableName, err)
 	}
+
+	defer rows.Close()
 
 	if rows.Next() {
 		var managedClusters []string
@@ -337,11 +339,11 @@ func (p *PostgreSQL) RemoveManagedClusterSetTracking(ctx context.Context, tableN
 	// read MCS, LH entry to update it
 	rows, err := p.conn.Query(ctx, fmt.Sprintf(`SELECT managed_clusters FROM spec.%s WHERE 
 		cluster_set_name=$1 AND leaf_hub_name=$2`, tableName), clusterSetName, leafHubName)
-	defer rows.Close()
-
 	if err != nil {
 		return fmt.Errorf("failed to read from spec.%s - %w", tableName, err)
 	}
+
+	defer rows.Close()
 
 	if rows.Next() {
 		var managedClusters []string
@@ -407,11 +409,11 @@ func (p *PostgreSQL) GetEntriesWithoutLeafHubName(ctx context.Context,
 	tableName string) ([]*spec.ManagedClusterLabelsSpec, error) {
 	rows, err := p.conn.Query(ctx, fmt.Sprintf(`SELECT managed_cluster_name, version FROM spec.%s WHERE 
 		leaf_hub_name = ''`, tableName))
-	defer rows.Close()
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to read from spec.%s - %w", tableName, err)
 	}
+
+	defer rows.Close()
 
 	managedClusterLabelsSpecSlice := make([]*spec.ManagedClusterLabelsSpec, 0)
 
@@ -426,8 +428,8 @@ func (p *PostgreSQL) GetEntriesWithoutLeafHubName(ctx context.Context,
 		}
 
 		managedClusterLabelsSpecSlice = append(managedClusterLabelsSpecSlice, &spec.ManagedClusterLabelsSpec{
-			Name:    managedClusterName,
-			Version: version,
+			ClusterName: managedClusterName,
+			Version:     version,
 		})
 	}
 

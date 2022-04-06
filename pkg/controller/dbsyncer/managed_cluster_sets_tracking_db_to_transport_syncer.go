@@ -100,13 +100,13 @@ func (syncer *managedClusterSetsTrackingDBToTransportSyncer) syncObjectsPerLeafH
 
 	// sync bindings
 	for leafHub, objectsBundle := range managedClusterSetBindingBundles {
-		syncer.syncToTransport(leafHub, datatypes.ManagedClusterSetBindingsMsgKey, datatypes.SpecBundle,
+		syncer.syncToTransport(leafHub, managedClusterSetBindingsMsgKey, datatypes.SpecBundle,
 			lastUpdateTimestamp, objectsBundle)
 	}
 
 	// sync sets
 	for leafHub, objectsBundle := range managedClusterSetBundles {
-		syncer.syncToTransport(leafHub, datatypes.ManagedClusterSetsMsgKey, datatypes.SpecBundle, lastUpdateTimestamp,
+		syncer.syncToTransport(leafHub, managedClusterSetsMsgKey, datatypes.SpecBundle, lastUpdateTimestamp,
 			objectsBundle)
 	}
 
@@ -179,8 +179,8 @@ func (syncer *managedClusterSetsTrackingDBToTransportSyncer) buildLeafHubToObjec
 			}
 			// merge content
 			if err := leafHubToObjectsBundleMap[leafHub].MergeBundle(objectsBundle); err != nil {
-				syncer.log.Error(err, "failed to merge object bundles", "clusterSetName", clusterSetName,
-					"leafHubName", leafHub)
+				return nil, fmt.Errorf("failed to merge object bundles : clusterSetName=%s, leafHubName=%s - %w",
+					clusterSetName, leafHub, err)
 			}
 		}
 	}

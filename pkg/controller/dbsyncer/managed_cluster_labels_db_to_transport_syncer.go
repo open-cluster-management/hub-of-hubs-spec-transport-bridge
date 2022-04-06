@@ -28,7 +28,7 @@ func AddManagedClusterLabelsDBToTransportSyncer(mgr ctrl.Manager, db db.SpecDB, 
 			db:                 db,
 			dbTableName:        managedClusterLabelsDBTableName,
 			transport:          transport,
-			transportBundleKey: datatypes.ManagedClustersMetadataMsgKey,
+			transportBundleKey: datatypes.ManagedClustersLabelsMsgKey,
 			intervalPolicy:     intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
 		},
 	}
@@ -109,9 +109,9 @@ func (syncer *managedClusterLabelsDBToTransportSyncer) trackManagedClusterSetAss
 			if clusterSetName, found := managedClusterLabelsSpec.Labels[managedClusterSetLabelKey]; found {
 				// found a cluster-set, update tracking
 				if err := syncer.db.AddManagedClusterSetTracking(ctx, managedClusterSetsTrackingTableName,
-					clusterSetName, leafHubName, managedClusterLabelsSpec.Name); err != nil {
+					clusterSetName, leafHubName, managedClusterLabelsSpec.ClusterName); err != nil {
 					return fmt.Errorf("failed to track managed cluster set {%s} assignment for cluster {%s.%s} - %w",
-						clusterSetName, leafHubName, managedClusterLabelsSpec.Name, err)
+						clusterSetName, leafHubName, managedClusterLabelsSpec.ClusterName, err)
 				} // the un-tracking should later be supported
 			}
 		}

@@ -15,7 +15,7 @@ import (
 
 const (
 	placementsTableName = "placements"
-	PlacementsMsgKey    = "Placements"
+	placementsMsgKey    = "Placements"
 )
 
 // AddPlacementsDBToTransportSyncer adds placement rules db to transport syncer to the manager.
@@ -27,7 +27,7 @@ func AddPlacementsDBToTransportSyncer(mgr ctrl.Manager, db db.SpecDB, transport 
 			db:                 db,
 			dbTableName:        placementsTableName,
 			transport:          transport,
-			transportBundleKey: PlacementsMsgKey,
+			transportBundleKey: placementsMsgKey,
 			intervalPolicy:     intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
 		},
 		createObjFunc:    func() metav1.Object { return &clusterv1alpha1.Placement{} },

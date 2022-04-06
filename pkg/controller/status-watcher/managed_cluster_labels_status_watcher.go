@@ -72,6 +72,7 @@ func (watcher *managedClusterLabelsStatusWatcher) updateDeletedLabelsPeriodicall
 		case <-ctx.Done(): // we have received a signal to stop
 			hubNameFillTicker.Stop()
 			labelsTrimmerTicker.Stop()
+
 			return
 
 		case <-hubNameFillTicker.C:
@@ -116,24 +117,22 @@ func (watcher *managedClusterLabelsStatusWatcher) trimDeletedLabelsByStatus(ctx 
 		watcher.log.Error(err, "trimming cycle skipped")
 		return false
 	}
-
 	// remove entries with no LH name (temporary state)
 	delete(leafHubToLabelsSpecBundleMap, "") // TODO: once non-k8s-restapi exposes hub names, remove line.
-
 	// since we have multiple objects and a success/fail must be returned for interval policy, we should evaluate
 	// if the majority passed, and reset if the majority failed.
 	successRate := 0
-
 	// iterate over entries
 	for _, managedClusterLabelsSpecBundle := range leafHubToLabelsSpecBundleMap {
 		// fetch actual labels status reflected in status DB
 		for _, managedClusterLabelsSpec := range managedClusterLabelsSpecBundle.Objects {
 			labelsStatus, err := watcher.statusDB.GetManagedClusterLabelsStatus(ctx, watcher.labelsStatusTableName,
-				managedClusterLabelsSpecBundle.LeafHubName, managedClusterLabelsSpec.Name)
+				managedClusterLabelsSpecBundle.LeafHubName, managedClusterLabelsSpec.ClusterName)
 			if err != nil {
 				watcher.log.Error(err, "skipped trimming managed cluster labels spec",
 					"leaf hub", managedClusterLabelsSpecBundle.LeafHubName,
-					"managed cluster", managedClusterLabelsSpec.Name, "version", managedClusterLabelsSpec.Version)
+					"managed cluster", managedClusterLabelsSpec.ClusterName,
+					"version", managedClusterLabelsSpec.Version)
 				successRate--
 
 				continue
@@ -155,17 +154,17 @@ func (watcher *managedClusterLabelsStatusWatcher) trimDeletedLabelsByStatus(ctx 
 
 			if err := watcher.specDB.UpdateDeletedLabelKeysOptimistically(ctx, watcher.labelsSpecTableName,
 				managedClusterLabelsSpec.Version, managedClusterLabelsSpecBundle.LeafHubName,
-				managedClusterLabelsSpec.Name, deletedLabelsStillInStatus); err != nil {
+				managedClusterLabelsSpec.ClusterName, deletedLabelsStillInStatus); err != nil {
 				watcher.log.Error(err, "failed to trim deleted_label_keys",
 					"leaf hub", managedClusterLabelsSpecBundle.LeafHubName,
-					"managed cluster", managedClusterLabelsSpec.Name, "version", managedClusterLabelsSpec.Version)
+					"managed cluster", managedClusterLabelsSpec.ClusterName, "version", managedClusterLabelsSpec.Version)
 				successRate--
 
 				continue
 			}
 
 			watcher.log.Info("trimmed labels successfully", "leaf hub", managedClusterLabelsSpecBundle.LeafHubName,
-				"managed cluster", managedClusterLabelsSpec.Name, "version", managedClusterLabelsSpec.Version)
+				"managed cluster", managedClusterLabelsSpec.ClusterName, "version", managedClusterLabelsSpec.Version)
 			successRate++
 		}
 	}
@@ -190,10 +189,10 @@ func (watcher *managedClusterLabelsStatusWatcher) fillMissingLeafHubNames(ctx co
 	// update leaf hub name for each entry
 	for _, managedClusterLabelsSpec := range entries {
 		leafHubName, err := watcher.statusDB.GetManagedClusterLeafHubName(ctx,
-			watcher.labelsStatusTableName, managedClusterLabelsSpec.Name)
+			watcher.labelsStatusTableName, managedClusterLabelsSpec.ClusterName)
 		if err != nil {
 			watcher.log.Error(err, "failed to get leaf-hub name from status db table",
-				"table", watcher.labelsStatusTableName, "managed cluster name", managedClusterLabelsSpec.Name,
+				"table", watcher.labelsStatusTableName, "managed cluster name", managedClusterLabelsSpec.ClusterName,
 				"version", managedClusterLabelsSpec.Version)
 			successRate--
 
@@ -202,9 +201,9 @@ func (watcher *managedClusterLabelsStatusWatcher) fillMissingLeafHubNames(ctx co
 
 		// update leaf hub name
 		if err := watcher.specDB.UpdateLeafHubNamesOptimistically(ctx, watcher.labelsSpecTableName,
-			managedClusterLabelsSpec.Version, managedClusterLabelsSpec.Name, leafHubName); err != nil {
+			managedClusterLabelsSpec.Version, managedClusterLabelsSpec.ClusterName, leafHubName); err != nil {
 			watcher.log.Error(err, "failed to update leaf hub name for managed cluster in spec db table",
-				"table", watcher.labelsSpecTableName, "managed cluster name", managedClusterLabelsSpec.Name,
+				"table", watcher.labelsSpecTableName, "managed cluster name", managedClusterLabelsSpec.ClusterName,
 				"version", managedClusterLabelsSpec.Version, "leaf hub name", leafHubName)
 			successRate--
 
@@ -214,7 +213,7 @@ func (watcher *managedClusterLabelsStatusWatcher) fillMissingLeafHubNames(ctx co
 		successRate++
 
 		watcher.log.Info("updated leaf hub name for managed cluster in spec db table",
-			"table", watcher.labelsSpecTableName, "managed cluster name", managedClusterLabelsSpec.Name,
+			"table", watcher.labelsSpecTableName, "managed cluster name", managedClusterLabelsSpec.ClusterName,
 			"leaf hub name", leafHubName, "version", managedClusterLabelsSpec.Version)
 	}
 
