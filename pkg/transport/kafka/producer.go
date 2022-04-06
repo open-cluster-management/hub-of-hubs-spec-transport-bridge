@@ -142,7 +142,7 @@ func (p *Producer) SendAsync(destinationHubName string, id string, msgType strin
 	msgBytes, err := json.Marshal(msg)
 	if err != nil {
 		p.log.Error(err, "Failed to send message", "MessageId", msg.ID, "MessageType", msg.MsgType,
-			"Version", msg.Version)
+			"Version", msg.Version, "Destination", msg.Destination)
 
 		return
 	}
@@ -150,7 +150,7 @@ func (p *Producer) SendAsync(destinationHubName string, id string, msgType strin
 	compressedBytes, err := p.compressor.Compress(msgBytes)
 	if err != nil {
 		p.log.Error(err, "Failed to compress bundle", "CompressorType", p.compressor.GetType(),
-			"MessageId", msg.ID, "MessageType", msg.MsgType, "Version", msg.Version)
+			"MessageId", msg.ID, "MessageType", msg.MsgType, "Version", msg.Version, "Destination", msg.Destination)
 
 		return
 	}
@@ -171,11 +171,11 @@ func (p *Producer) SendAsync(destinationHubName string, id string, msgType strin
 
 	if err = p.kafkaProducer.ProduceAsync(msgKey, p.topic, partition, messageHeaders, compressedBytes); err != nil {
 		p.log.Error(err, "Failed to send message", "MessageId", msg.ID, "MessageType", msg.MsgType,
-			"Version", msg.Version)
+			"Version", msg.Version, "Destination", msg.Destination)
 	}
 
 	p.log.Info("Message sent successfully", "MessageId", msg.ID, "MessageType", msg.MsgType,
-		"Version", msg.Version)
+		"Version", msg.Version, "Destination", msg.Destination)
 }
 
 // GetVersion returns an empty string if the object doesn't exist or an error occurred.
