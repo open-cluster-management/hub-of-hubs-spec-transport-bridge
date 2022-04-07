@@ -32,8 +32,4 @@ type ManagedClusterLabelsSpecDB interface {
 	// belonging to a leaf-hub that had at least one update since the given timestamp, from a specific table.
 	GetUpdatedManagedClusterLabelsBundles(ctx context.Context, tableName string,
 		timestamp *time.Time) (map[string]*spec.ManagedClusterLabelsSpecBundle, *time.Time, error)
-	// GetEntriesWithDeletedLabels returns a map of leaf-hub -> ManagedClusterLabelsSpecBundle of objects that have a
-	// none-empty deleted-label-keys column.
-	GetEntriesWithDeletedLabels(ctx context.Context,
-		tableName string) (map[string]*spec.ManagedClusterLabelsSpecBundle, error)
 }

@@ -120,22 +120,6 @@ from spec.%s WHERE updated_at::timestamp > timestamp '%s')`, tableName, tableNam
 	return leafHubToLabelsSpecBundleMap, latestTimestampInTable, nil
 }
 
-// GetEntriesWithDeletedLabels returns a map of leaf-hub -> ManagedClusterLabelsSpecBundle of objects that have a
-// none-empty deleted-label-keys column.
-func (p *PostgreSQL) GetEntriesWithDeletedLabels(ctx context.Context,
-	tableName string) (map[string]*spec.ManagedClusterLabelsSpecBundle, error) {
-	rows, _ := p.conn.Query(ctx, fmt.Sprintf(`SELECT leaf_hub_name,managed_cluster_name,labels,
-deleted_label_keys,updated_at,version FROM spec.%s WHERE deleted_label_keys != '[]'`, tableName))
-	defer rows.Close()
-
-	leafHubToLabelsSpecBundleMap, err := p.getLabelsSpecBundlesFromRows(rows)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get managed cluster spec entries with deleted labels - %w", err)
-	}
-
-	return leafHubToLabelsSpecBundleMap, nil
-}
-
 func (p *PostgreSQL) getLabelsSpecBundlesFromRows(rows pgx.Rows) (map[string]*spec.ManagedClusterLabelsSpecBundle,
 	error) {
 	leafHubToLabelsSpecBundleMap := make(map[string]*spec.ManagedClusterLabelsSpecBundle)
