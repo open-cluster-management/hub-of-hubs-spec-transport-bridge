@@ -45,10 +45,19 @@ func (p *PostgreSQL) Stop() {
 }
 
 // GetLastUpdateTimestamp returns the last update timestamp of a specific table.
-func (p *PostgreSQL) GetLastUpdateTimestamp(ctx context.Context, tableName string) (*time.Time, error) {
+func (p *PostgreSQL) GetLastUpdateTimestamp(ctx context.Context, tableName string,
+	tableHasResources bool) (*time.Time, error) {
 	var lastTimestamp time.Time
-	err := p.conn.QueryRow(ctx,
-		fmt.Sprintf(`SELECT MAX(updated_at) FROM spec.%s`, tableName)).Scan(&lastTimestamp)
+
+	query := fmt.Sprintf(`SELECT MAX(updated_at) FROM spec.%s WHERE
+		payload->'metadata'->'annotations'->'hub-of-hubs.open-cluster-management.io/local-resource' IS NULL`,
+		tableName)
+
+	if !tableHasResources {
+		query = fmt.Sprintf(`SELECT MAX(updated_at) FROM spec.%s`, tableName)
+	}
+
+	err := p.conn.QueryRow(ctx, query).Scan(&lastTimestamp)
 
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, fmt.Errorf("no objects in the table spec.%s - %w", tableName, err)
@@ -60,12 +69,14 @@ func (p *PostgreSQL) GetLastUpdateTimestamp(ctx context.Context, tableName strin
 // GetObjectsBundle returns a bundle of objects from a specific table.
 func (p *PostgreSQL) GetObjectsBundle(ctx context.Context, tableName string, createObjFunc bundle.CreateObjectFunction,
 	intoBundle bundle.ObjectsBundle) (*time.Time, error) {
-	timestamp, err := p.GetLastUpdateTimestamp(ctx, tableName)
+	timestamp, err := p.GetLastUpdateTimestamp(ctx, tableName, true)
 	if err != nil {
 		return nil, err
 	}
 
-	rows, err := p.conn.Query(ctx, fmt.Sprintf(`SELECT id,payload,deleted FROM spec.%s`, tableName))
+	rows, err := p.conn.Query(ctx, fmt.Sprintf(`SELECT id,payload,deleted FROM spec.%s WHERE
+		payload->'metadata'->'annotations'->'hub-of-hubs.open-cluster-management.io/local-resource' IS NULL`,
+		tableName))
 	if err != nil {
 		return nil, fmt.Errorf("failed to query table spec.%s - %w", tableName, err)
 	}
@@ -96,28 +107,23 @@ func (p *PostgreSQL) GetObjectsBundle(ctx context.Context, tableName string, cre
 // GetUpdatedManagedClusterLabelsBundles returns a map of leaf-hub -> ManagedClusterLabelsSpecBundle of objects
 // belonging to a leaf-hub that had at least once update since the given timestamp, from a specific table.
 func (p *PostgreSQL) GetUpdatedManagedClusterLabelsBundles(ctx context.Context, tableName string,
-	timestamp *time.Time) (map[string]*spec.ManagedClusterLabelsSpecBundle, *time.Time, error) {
-	latestTimestampInTable, err := p.GetLastUpdateTimestamp(ctx, tableName)
-	if err != nil {
-		return nil, nil, err
-	}
-
+	timestamp *time.Time) (map[string]*spec.ManagedClusterLabelsSpecBundle, error) {
 	// select ManagedClusterLabelsSpec entries information from DB
 	rows, err := p.conn.Query(ctx, fmt.Sprintf(`SELECT leaf_hub_name,managed_cluster_name,labels,
 deleted_label_keys,updated_at,version FROM spec.%s WHERE leaf_hub_name IN (SELECT DISTINCT(leaf_hub_name) 
 from spec.%s WHERE updated_at::timestamp > timestamp '%s')`, tableName, tableName, timestamp.Format(time.RFC3339Nano)))
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to query table spec.%s - %w", tableName, err)
+		return nil, fmt.Errorf("failed to query table spec.%s - %w", tableName, err)
 	}
 
 	defer rows.Close()
 
 	leafHubToLabelsSpecBundleMap, err := p.getLabelsSpecBundlesFromRows(rows)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get managed cluster labels bundles - %w", err)
+		return nil, fmt.Errorf("failed to get managed cluster labels bundles - %w", err)
 	}
 
-	return leafHubToLabelsSpecBundleMap, latestTimestampInTable, nil
+	return leafHubToLabelsSpecBundleMap, nil
 }
 
 func (p *PostgreSQL) getLabelsSpecBundlesFromRows(rows pgx.Rows) (map[string]*spec.ManagedClusterLabelsSpecBundle,

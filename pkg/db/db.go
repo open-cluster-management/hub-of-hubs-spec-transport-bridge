@@ -11,7 +11,7 @@ import (
 // SpecDB is the needed interface for the db transport bridge.
 type SpecDB interface {
 	// GetLastUpdateTimestamp returns the last update timestamp of a specific table.
-	GetLastUpdateTimestamp(ctx context.Context, tableName string) (*time.Time, error)
+	GetLastUpdateTimestamp(ctx context.Context, tableName string, tableHasResources bool) (*time.Time, error)
 	// Stop stops db and releases resources (e.g. connection pool).
 	Stop()
 
@@ -31,5 +31,5 @@ type ManagedClusterLabelsSpecDB interface {
 	// GetUpdatedManagedClusterLabelsBundles returns a map of leaf-hub -> ManagedClusterLabelsSpecBundle of objects
 	// belonging to a leaf-hub that had at least one update since the given timestamp, from a specific table.
 	GetUpdatedManagedClusterLabelsBundles(ctx context.Context, tableName string,
-		timestamp *time.Time) (map[string]*spec.ManagedClusterLabelsSpecBundle, *time.Time, error)
+		timestamp *time.Time) (map[string]*spec.ManagedClusterLabelsSpecBundle, error)
 }

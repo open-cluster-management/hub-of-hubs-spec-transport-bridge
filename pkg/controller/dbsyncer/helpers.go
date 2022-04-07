@@ -19,7 +19,7 @@ const timeFormat = "2006-01-02_15-04-05.000000"
 func syncObjectsBundle(ctx context.Context, transportObj transport.Transport, transportBundleKey string,
 	specDB db.SpecDB, dbTableName string, createObjFunc bundle.CreateObjectFunction,
 	createBundleFunc bundle.CreateBundleFunction, lastSyncTimestampPtr *time.Time) (bool, error) {
-	lastUpdateTimestamp, err := specDB.GetLastUpdateTimestamp(ctx, dbTableName)
+	lastUpdateTimestamp, err := specDB.GetLastUpdateTimestamp(ctx, dbTableName, true) // ignore local resources
 	if err != nil {
 		return false, fmt.Errorf("unable to sync bundle - %w", err)
 	}

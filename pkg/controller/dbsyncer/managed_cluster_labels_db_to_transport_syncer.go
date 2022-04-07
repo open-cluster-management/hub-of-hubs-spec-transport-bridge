@@ -37,7 +37,7 @@ func AddManagedClusterLabelsDBToTransportSyncer(mgr ctrl.Manager, specDB db.Spec
 // otherwise false.
 func syncManagedClusterLabelsBundles(ctx context.Context, transportObj transport.Transport, transportBundleKey string,
 	specDB db.SpecDB, dbTableName string, lastSyncTimestampPtr *time.Time) (bool, error) {
-	lastUpdateTimestamp, err := specDB.GetLastUpdateTimestamp(ctx, dbTableName)
+	lastUpdateTimestamp, err := specDB.GetLastUpdateTimestamp(ctx, dbTableName, false) // no resources in table
 	if err != nil {
 		return false, fmt.Errorf("unable to sync bundle - %w", err)
 	}
@@ -48,7 +48,7 @@ func syncManagedClusterLabelsBundles(ctx context.Context, transportObj transport
 
 	// if we got here, then the last update timestamp from db is after what we have in memory.
 	// this means something has changed in db, syncing to transport.
-	leafHubToLabelsSpecBundleMap, _,
+	leafHubToLabelsSpecBundleMap,
 		err := specDB.GetUpdatedManagedClusterLabelsBundles(ctx, dbTableName, lastUpdateTimestamp)
 	if err != nil {
 		return false, fmt.Errorf("unable to sync bundle - %w", err)
