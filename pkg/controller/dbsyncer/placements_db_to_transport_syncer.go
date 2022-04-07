@@ -19,7 +19,7 @@ const (
 	placementsMsgKey    = "Placements"
 )
 
-// AddPlacementsDBToTransportSyncer adds placement rules db to transport syncer to the manager.
+// AddPlacementsDBToTransportSyncer adds placement db to transport syncer to the manager.
 func AddPlacementsDBToTransportSyncer(mgr ctrl.Manager, specDB db.SpecDB, transportObj transport.Transport,
 	syncInterval time.Duration) error {
 	createObjFunc := func() metav1.Object { return &clusterv1alpha1.Placement{} }
