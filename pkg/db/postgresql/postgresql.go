@@ -2,6 +2,7 @@ package postgresql
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -17,7 +18,10 @@ const (
 	envVarDatabaseURL = "DATABASE_URL"
 )
 
-var errEnvVarNotFound = errors.New("not found environment variable")
+var (
+	errEnvVarNotFound                    = errors.New("not found environment variable")
+	errOptimisticConcurrencyUpdateFailed = errors.New("zero rows were affected by an optimistic concurrency update")
+)
 
 // PostgreSQL abstracts PostgreSQL client.
 type PostgreSQL struct {
@@ -127,6 +131,22 @@ func (p *PostgreSQL) GetUpdatedManagedClusterLabelsBundles(ctx context.Context, 
 	return leafHubToLabelsSpecBundleMap, nil
 }
 
+// GetEntriesWithDeletedLabels returns a map of leaf-hub -> ManagedClusterLabelsSpecBundle of objects that have a
+// none-empty deleted-label-keys column.
+func (p *PostgreSQL) GetEntriesWithDeletedLabels(ctx context.Context,
+	tableName string) (map[string]*spec.ManagedClusterLabelsSpecBundle, error) {
+	rows, _ := p.conn.Query(ctx, fmt.Sprintf(`SELECT leaf_hub_name,managed_cluster_name,labels,
+deleted_label_keys,updated_at,version FROM spec.%s WHERE deleted_label_keys != '[]'`, tableName))
+	defer rows.Close()
+
+	leafHubToLabelsSpecBundleMap, err := p.getLabelsSpecBundlesFromRows(rows)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get managed cluster spec entries with deleted labels - %w", err)
+	}
+
+	return leafHubToLabelsSpecBundleMap, nil
+}
+
 func (p *PostgreSQL) getLabelsSpecBundlesFromRows(rows pgx.Rows) (map[string]*spec.ManagedClusterLabelsSpecBundle,
 	error) {
 	leafHubToLabelsSpecBundleMap := make(map[string]*spec.ManagedClusterLabelsSpecBundle)
@@ -169,4 +189,106 @@ func (p *PostgreSQL) getLabelsSpecBundlesFromRows(rows pgx.Rows) (map[string]*sp
 	}
 
 	return leafHubToLabelsSpecBundleMap, nil
+}
+
+// UpdateDeletedLabelKeysOptimistically updates deleted_label_keys value for a managed cluster entry under
+// optimistic concurrency approach.
+func (p *PostgreSQL) UpdateDeletedLabelKeysOptimistically(ctx context.Context, tableName string, readVersion int64,
+	leafHubName string, managedClusterName string, deletedLabelKeys []string) error {
+	exists := false
+	if err := p.conn.QueryRow(ctx, fmt.Sprintf(`SELECT EXISTS(SELECT 1 from spec.%s WHERE leaf_hub_name=$1 AND 
+			managed_cluster_name=$2 AND version=$3)`, tableName), leafHubName, managedClusterName,
+		readVersion).Scan(&exists); err != nil {
+		return fmt.Errorf("failed to read from spec.%s - %w", tableName, err)
+	}
+
+	if exists { // row for (leaf hub, mc, version) tuple exists, update the db.
+		deletedLabelsJSON, err := json.Marshal(deletedLabelKeys)
+		if err != nil {
+			return fmt.Errorf("failed to marshal deleted labels - %w", err)
+		}
+
+		if commandTag, err := p.conn.Exec(ctx, fmt.Sprintf(`UPDATE spec.%s SET updated_at=now(),deleted_label_keys=$1,
+		version=$2	WHERE leaf_hub_name=$3 AND managed_cluster_name=$4 AND version=$5`, tableName), deletedLabelsJSON,
+			readVersion+1, leafHubName, managedClusterName, readVersion); err != nil {
+			return fmt.Errorf("failed to update managed cluster labels row in spec.%s - %w", tableName, err)
+		} else if commandTag.RowsAffected() == 0 {
+			return errOptimisticConcurrencyUpdateFailed
+		}
+	}
+
+	return nil
+}
+
+// GetEntriesWithoutLeafHubName returns a slice of ManagedClusterLabelsSpec that are missing leaf hub name.
+func (p *PostgreSQL) GetEntriesWithoutLeafHubName(ctx context.Context,
+	tableName string) ([]*spec.ManagedClusterLabelsSpec, error) {
+	rows, err := p.conn.Query(ctx, fmt.Sprintf(`SELECT managed_cluster_name, version FROM spec.%s WHERE 
+		leaf_hub_name = ''`, tableName))
+	if err != nil {
+		return nil, fmt.Errorf("failed to read from spec.%s - %w", tableName, err)
+	}
+
+	defer rows.Close()
+
+	managedClusterLabelsSpecSlice := make([]*spec.ManagedClusterLabelsSpec, 0)
+
+	for rows.Next() {
+		var (
+			managedClusterName string
+			version            int64
+		)
+
+		if err := rows.Scan(&managedClusterName, &version); err != nil {
+			return nil, fmt.Errorf("error reading from spec.%s - %w", tableName, err)
+		}
+
+		managedClusterLabelsSpecSlice = append(managedClusterLabelsSpecSlice, &spec.ManagedClusterLabelsSpec{
+			ClusterName: managedClusterName,
+			Version:     version,
+		})
+	}
+
+	return managedClusterLabelsSpecSlice, nil
+}
+
+// UpdateLeafHubNamesOptimistically updates leaf hub name for a given managed cluster under optimistic concurrency.
+func (p *PostgreSQL) UpdateLeafHubNamesOptimistically(ctx context.Context, tableName string, readVersion int64,
+	managedClusterName string, leafHubName string) error {
+	if commandTag, err := p.conn.Exec(ctx, fmt.Sprintf(`UPDATE spec.%s SET updated_at=now(),leaf_hub_name=$1,version=$2 
+				WHERE managed_cluster_name=$3 AND version=$4`, tableName), leafHubName, readVersion+1,
+		managedClusterName, readVersion); err != nil {
+		return fmt.Errorf("failed to update managed cluster labels row in spec.%s - %w", tableName, err)
+	} else if commandTag.RowsAffected() == 0 {
+		return errOptimisticConcurrencyUpdateFailed
+	}
+
+	return nil
+}
+
+// GetManagedClusterLabelsStatus gets the labels present in managed-cluster CR metadata from a specific table.
+func (p *PostgreSQL) GetManagedClusterLabelsStatus(ctx context.Context, tableName string, leafHubName string,
+	managedClusterName string) (map[string]string, error) {
+	labels := make(map[string]string)
+
+	if err := p.conn.QueryRow(ctx, fmt.Sprintf(`SELECT payload->'metadata'->'labels' FROM status.%s WHERE 
+leaf_hub_name=$1 AND payload->'metadata'->>'name'=$2`, tableName), leafHubName,
+		managedClusterName).Scan(&labels); err != nil {
+		return nil, fmt.Errorf("error reading from table status.%s - %w", tableName, err)
+	}
+
+	return labels, nil
+}
+
+// GetManagedClusterLeafHubName returns leaf-hub name for a given managed cluster from a specific table.
+// TODO: once non-k8s-restapi exposes hub names, remove line.
+func (p *PostgreSQL) GetManagedClusterLeafHubName(ctx context.Context, tableName string,
+	managedClusterName string) (string, error) {
+	var leafHubName string
+	if err := p.conn.QueryRow(ctx, fmt.Sprintf(`SELECT leaf_hub_name FROM status.%s WHERE 
+		payload->'metadata'->>'name'=$1`, tableName), managedClusterName).Scan(&leafHubName); err != nil {
+		return "", fmt.Errorf("error reading from table status.%s - %w", tableName, err)
+	}
+
+	return leafHubName, nil
 }
