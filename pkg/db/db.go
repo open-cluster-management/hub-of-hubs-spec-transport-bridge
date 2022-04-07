@@ -36,6 +36,4 @@ type ManagedClusterLabelsSpecDB interface {
 	// none-empty deleted-label-keys column.
 	GetEntriesWithDeletedLabels(ctx context.Context,
 		tableName string) (map[string]*spec.ManagedClusterLabelsSpecBundle, error)
-	UpdateDeletedLabelKeysOptimistically(ctx context.Context, tableName string, readVersion int64, leafHubName string,
-		managedClusterName string, deletedLabelKeys []string) error
 }
