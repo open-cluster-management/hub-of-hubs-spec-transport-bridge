@@ -37,6 +37,7 @@ func syncObjectsBundle(ctx context.Context, transportObj transport.Transport, tr
 		return false, fmt.Errorf("unable to sync bundle - %w", err)
 	}
 
+	// updating value to retain same ptr between calls
 	*lastSyncTimestampPtr = *lastUpdateTimestamp
 
 	if err := syncToTransport(transportObj, transport.Broadcast, transportBundleKey, datatypes.SpecBundle,
