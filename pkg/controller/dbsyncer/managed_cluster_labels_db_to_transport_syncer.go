@@ -53,8 +53,6 @@ func syncManagedClusterLabelsBundles(ctx context.Context, transportObj transport
 	if err != nil {
 		return false, fmt.Errorf("unable to sync bundle - %w", err)
 	}
-	// remove entries with no LH name (temporary state)
-	delete(leafHubToLabelsSpecBundleMap, "") // TODO: once non-k8s-restapi exposes hub names, remove line.
 
 	// updating value to retain same ptr between calls
 	*lastSyncTimestampPtr = *lastUpdateTimestamp

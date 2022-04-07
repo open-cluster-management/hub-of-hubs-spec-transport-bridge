@@ -110,8 +110,9 @@ func (p *PostgreSQL) GetUpdatedManagedClusterLabelsBundles(ctx context.Context, 
 	timestamp *time.Time) (map[string]*spec.ManagedClusterLabelsSpecBundle, error) {
 	// select ManagedClusterLabelsSpec entries information from DB
 	rows, err := p.conn.Query(ctx, fmt.Sprintf(`SELECT leaf_hub_name,managed_cluster_name,labels,
-deleted_label_keys,updated_at,version FROM spec.%s WHERE leaf_hub_name IN (SELECT DISTINCT(leaf_hub_name) 
-from spec.%s WHERE updated_at::timestamp > timestamp '%s')`, tableName, tableName, timestamp.Format(time.RFC3339Nano)))
+		deleted_label_keys,updated_at,version FROM spec.%s WHERE leaf_hub_name IN (SELECT DISTINCT(leaf_hub_name) 
+		from spec.%s WHERE updated_at::timestamp > timestamp '%s') AND leaf_hub_name != ""`, tableName, tableName,
+		timestamp.Format(time.RFC3339Nano)))
 	if err != nil {
 		return nil, fmt.Errorf("failed to query table spec.%s - %w", tableName, err)
 	}
