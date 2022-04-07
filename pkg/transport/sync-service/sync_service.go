@@ -130,7 +130,8 @@ func (s *SyncService) distributeMessages() {
 				Description: fmt.Sprintf("%s:%s", compressionHeader, s.compressor.GetType()),
 				DestID:      msg.Destination, // if broadcast then empty, works as usual.
 			}
-			if len(msg.Destination) > 0 { // empty destination means broadcast. only if specific to a hub, modify obj id
+
+			if msg.Destination != transport.Broadcast { // only if specific to a hub, modify obj id
 				objectMetaData.ObjectID = fmt.Sprintf("%s.%s", msg.Destination, msg.ID)
 			}
 

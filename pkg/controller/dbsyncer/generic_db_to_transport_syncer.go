@@ -7,24 +7,18 @@ import (
 
 	"github.com/go-logr/logr"
 	datatypes "github.com/stolostron/hub-of-hubs-data-types"
-	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/db"
 	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/intervalpolicy"
 	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/transport"
 )
 
-const (
-	timeFormat = "2006-01-02_15-04-05.000000"
-)
-
 type genericDBToTransportSyncer struct {
 	log                 logr.Logger
-	db                  db.SpecDB
-	dbTableName         string
 	transport           transport.Transport
 	transportBundleKey  string
 	lastUpdateTimestamp *time.Time
-	syncBundleFunc      func(ctx context.Context) bool
 	intervalPolicy      intervalpolicy.IntervalPolicy
+	syncBundleFunc      func(ctx context.Context, transportObj transport.Transport, transportBundleKey string,
+		lastUpdateTimestamp *time.Time) (bool, error)
 }
 
 func (syncer *genericDBToTransportSyncer) Start(ctx context.Context) error {
@@ -33,7 +27,7 @@ func (syncer *genericDBToTransportSyncer) Start(ctx context.Context) error {
 	go syncer.periodicSync(ctx)
 
 	<-ctx.Done() // blocking wait for cancel context event
-	syncer.log.Info("stopped syncer", "table", syncer.dbTableName)
+	syncer.log.Info("stopped syncer")
 
 	return nil
 }
@@ -51,8 +45,12 @@ func (syncer *genericDBToTransportSyncer) init(ctx context.Context) {
 		syncer.lastUpdateTimestamp = &time.Time{}
 	}
 
-	syncer.log.Info("initialized syncer", "table", fmt.Sprintf("spec.%s", syncer.dbTableName))
-	syncer.syncBundleFunc(ctx)
+	syncer.log.Info("initialized syncer")
+
+	if _, err := syncer.syncBundleFunc(ctx, syncer.transport, syncer.transportBundleKey,
+		syncer.lastUpdateTimestamp); err != nil {
+		syncer.log.Error(err, "failed to sync bundle")
+	}
 }
 
 func (syncer *genericDBToTransportSyncer) initLastUpdateTimestampFromTransport() *time.Time {
@@ -81,7 +79,12 @@ func (syncer *genericDBToTransportSyncer) periodicSync(ctx context.Context) {
 		case <-ticker.C:
 			// define timeout of max sync interval on the sync function
 			ctxWithTimeout, cancelFunc := context.WithTimeout(ctx, syncer.intervalPolicy.GetMaxInterval())
-			synced := syncer.syncBundleFunc(ctxWithTimeout)
+
+			synced, err := syncer.syncBundleFunc(ctxWithTimeout, syncer.transport, syncer.transportBundleKey,
+				syncer.lastUpdateTimestamp)
+			if err != nil {
+				syncer.log.Error(err, "failed to sync bundle")
+			}
 
 			cancelFunc() // cancel child ctx and is used to cleanup resources once context expires or sync is done.
 

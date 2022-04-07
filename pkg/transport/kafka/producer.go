@@ -160,7 +160,7 @@ func (p *Producer) SendAsync(destinationHubName string, id string, msgType strin
 	}
 
 	msgKey := msg.ID
-	if destinationHubName != "" { // set destination if specified
+	if destinationHubName != transport.Broadcast { // set destination if specified
 		msgKey = fmt.Sprintf("%s.%s", destinationHubName, msg.ID)
 
 		messageHeaders = append(messageHeaders, kafka.Header{

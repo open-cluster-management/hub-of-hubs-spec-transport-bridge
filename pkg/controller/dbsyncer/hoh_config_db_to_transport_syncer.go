@@ -1,6 +1,7 @@
 package dbsyncer
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -19,24 +20,21 @@ const (
 )
 
 // AddHoHConfigDBToTransportSyncer adds hub-of-hubs config db to transport syncer to the manager.
-func AddHoHConfigDBToTransportSyncer(mgr ctrl.Manager, db db.SpecDB, transport transport.Transport,
+func AddHoHConfigDBToTransportSyncer(mgr ctrl.Manager, specDB db.SpecDB, transportObj transport.Transport,
 	syncInterval time.Duration) error {
-	dbToTransportSyncer := &genericObjectsDBToTransportSyncer{
-		genericDBToTransportSyncer: &genericDBToTransportSyncer{
-			log:                ctrl.Log.WithName("hoh-config-db-to-transport-syncer"),
-			db:                 db,
-			dbTableName:        configTableName,
-			transport:          transport,
-			transportBundleKey: configMsgKey,
-			intervalPolicy:     intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
+	createObjFunc := func() metav1.Object { return &configv1.Config{} }
+
+	if err := mgr.Add(&genericDBToTransportSyncer{
+		log:                ctrl.Log.WithName("hoh-config-db-to-transport-syncer"),
+		transport:          transportObj,
+		transportBundleKey: configMsgKey,
+		intervalPolicy:     intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
+		syncBundleFunc: func(ctx context.Context, transportObj transport.Transport, transportBundleKey string,
+			lastSyncTimestampPtr *time.Time) (bool, error) {
+			return syncObjectsBundle(ctx, transportObj, transportBundleKey, specDB, configTableName,
+				createObjFunc, bundle.NewBaseBundle, lastSyncTimestampPtr)
 		},
-		createObjFunc:    func() metav1.Object { return &configv1.Config{} },
-		createBundleFunc: bundle.NewBaseBundle,
-	}
-
-	dbToTransportSyncer.syncBundleFunc = dbToTransportSyncer.syncObjectsBundle
-
-	if err := mgr.Add(dbToTransportSyncer); err != nil {
+	}); err != nil {
 		return fmt.Errorf("failed to add config db to transport syncer - %w", err)
 	}
 

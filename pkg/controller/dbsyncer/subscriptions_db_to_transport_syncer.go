@@ -1,6 +1,7 @@
 package dbsyncer
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -19,24 +20,21 @@ const (
 )
 
 // AddSubscriptionsDBToTransportSyncer adds subscriptions db to transport syncer to the manager.
-func AddSubscriptionsDBToTransportSyncer(mgr ctrl.Manager, db db.SpecDB, transport transport.Transport,
+func AddSubscriptionsDBToTransportSyncer(mgr ctrl.Manager, specDB db.SpecDB, transportObj transport.Transport,
 	syncInterval time.Duration) error {
-	dbToTransportSyncer := &genericObjectsDBToTransportSyncer{
-		genericDBToTransportSyncer: &genericDBToTransportSyncer{
-			log:                ctrl.Log.WithName("subscriptions-db-to-transport-syncer"),
-			db:                 db,
-			dbTableName:        subscriptionsTableName,
-			transport:          transport,
-			transportBundleKey: subscriptionMsgKey,
-			intervalPolicy:     intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
+	createObjFunc := func() metav1.Object { return &subscriptionsv1.Subscription{} }
+
+	if err := mgr.Add(&genericDBToTransportSyncer{
+		log:                ctrl.Log.WithName("subscriptions-db-to-transport-syncer"),
+		transport:          transportObj,
+		transportBundleKey: subscriptionMsgKey,
+		intervalPolicy:     intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
+		syncBundleFunc: func(ctx context.Context, transportObj transport.Transport, transportBundleKey string,
+			lastSyncTimestampPtr *time.Time) (bool, error) {
+			return syncObjectsBundle(ctx, transportObj, transportBundleKey, specDB, subscriptionsTableName,
+				createObjFunc, bundle.NewBaseBundle, lastSyncTimestampPtr)
 		},
-		createObjFunc:    func() metav1.Object { return &subscriptionsv1.Subscription{} },
-		createBundleFunc: bundle.NewBaseBundle,
-	}
-
-	dbToTransportSyncer.syncBundleFunc = dbToTransportSyncer.syncObjectsBundle
-
-	if err := mgr.Add(dbToTransportSyncer); err != nil {
+	}); err != nil {
 		return fmt.Errorf("failed to add subscriptions db to transport syncer - %w", err)
 	}
 

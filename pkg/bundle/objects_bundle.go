@@ -1,8 +1,6 @@
 package bundle
 
-import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-)
+import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 type (
 	// CreateObjectFunction is a function that specifies how to create an object.
