@@ -135,8 +135,12 @@ func (p *PostgreSQL) GetUpdatedManagedClusterLabelsBundles(ctx context.Context, 
 // none-empty deleted-label-keys column.
 func (p *PostgreSQL) GetEntriesWithDeletedLabels(ctx context.Context,
 	tableName string) (map[string]*spec.ManagedClusterLabelsSpecBundle, error) {
-	rows, _ := p.conn.Query(ctx, fmt.Sprintf(`SELECT leaf_hub_name,managed_cluster_name,labels,
+	rows, err := p.conn.Query(ctx, fmt.Sprintf(`SELECT leaf_hub_name,managed_cluster_name,labels,
 deleted_label_keys,updated_at,version FROM spec.%s WHERE deleted_label_keys != '[]'`, tableName))
+	if err != nil {
+		return nil, fmt.Errorf("failed to query table spec.%s - %w", tableName, err)
+	}
+
 	defer rows.Close()
 
 	leafHubToLabelsSpecBundleMap, err := p.getLabelsSpecBundlesFromRows(rows)
@@ -191,9 +195,9 @@ func (p *PostgreSQL) getLabelsSpecBundlesFromRows(rows pgx.Rows) (map[string]*sp
 	return leafHubToLabelsSpecBundleMap, nil
 }
 
-// UpdateDeletedLabelKeysOptimistically updates deleted_label_keys value for a managed cluster entry under
+// UpdateDeletedLabelKeys updates deleted_label_keys value for a managed cluster entry under
 // optimistic concurrency approach.
-func (p *PostgreSQL) UpdateDeletedLabelKeysOptimistically(ctx context.Context, tableName string, readVersion int64,
+func (p *PostgreSQL) UpdateDeletedLabelKeys(ctx context.Context, tableName string, readVersion int64,
 	leafHubName string, managedClusterName string, deletedLabelKeys []string) error {
 	exists := false
 	if err := p.conn.QueryRow(ctx, fmt.Sprintf(`SELECT EXISTS(SELECT 1 from spec.%s WHERE leaf_hub_name=$1 AND 
@@ -252,8 +256,8 @@ func (p *PostgreSQL) GetEntriesWithoutLeafHubName(ctx context.Context,
 	return managedClusterLabelsSpecSlice, nil
 }
 
-// UpdateLeafHubNamesOptimistically updates leaf hub name for a given managed cluster under optimistic concurrency.
-func (p *PostgreSQL) UpdateLeafHubNamesOptimistically(ctx context.Context, tableName string, readVersion int64,
+// UpdateLeafHubNames updates leaf hub name for a given managed cluster under optimistic concurrency.
+func (p *PostgreSQL) UpdateLeafHubNames(ctx context.Context, tableName string, readVersion int64,
 	managedClusterName string, leafHubName string) error {
 	if commandTag, err := p.conn.Exec(ctx, fmt.Sprintf(`UPDATE spec.%s SET updated_at=now(),leaf_hub_name=$1,version=$2 
 				WHERE managed_cluster_name=$3 AND version=$4`, tableName), leafHubName, readVersion+1,

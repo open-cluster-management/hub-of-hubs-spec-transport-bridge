@@ -152,7 +152,7 @@ func (watcher *managedClusterLabelsStatusWatcher) trimDeletedLabelsByStatus(ctx 
 				continue
 			}
 
-			if err := watcher.specDB.UpdateDeletedLabelKeysOptimistically(ctx, watcher.labelsSpecTableName,
+			if err := watcher.specDB.UpdateDeletedLabelKeys(ctx, watcher.labelsSpecTableName,
 				managedClusterLabelsSpec.Version, managedClusterLabelsSpecBundle.LeafHubName,
 				managedClusterLabelsSpec.ClusterName, deletedLabelsStillInStatus); err != nil {
 				watcher.log.Error(err, "failed to trim deleted_label_keys",
@@ -200,7 +200,7 @@ func (watcher *managedClusterLabelsStatusWatcher) fillMissingLeafHubNames(ctx co
 		}
 
 		// update leaf hub name
-		if err := watcher.specDB.UpdateLeafHubNamesOptimistically(ctx, watcher.labelsSpecTableName,
+		if err := watcher.specDB.UpdateLeafHubNames(ctx, watcher.labelsSpecTableName,
 			managedClusterLabelsSpec.Version, managedClusterLabelsSpec.ClusterName, leafHubName); err != nil {
 			watcher.log.Error(err, "failed to update leaf hub name for managed cluster in spec db table",
 				"table", watcher.labelsSpecTableName, "managed cluster name", managedClusterLabelsSpec.ClusterName,

@@ -36,8 +36,8 @@ type ManagedClusterLabelsSpecDB interface {
 	// none-empty deleted-label-keys column.
 	GetEntriesWithDeletedLabels(ctx context.Context,
 		tableName string) (map[string]*spec.ManagedClusterLabelsSpecBundle, error)
-	// UpdateDeletedLabelKeysOptimistically updates
-	UpdateDeletedLabelKeysOptimistically(ctx context.Context, tableName string, readVersion int64, leafHubName string,
+	// UpdateDeletedLabelKeys updates
+	UpdateDeletedLabelKeys(ctx context.Context, tableName string, readVersion int64, leafHubName string,
 		managedClusterName string, deletedLabelKeys []string) error
 	TempManagedClusterLabelsSpecDB
 }
@@ -48,8 +48,8 @@ type ManagedClusterLabelsSpecDB interface {
 type TempManagedClusterLabelsSpecDB interface {
 	// GetEntriesWithoutLeafHubName returns a slice of ManagedClusterLabelsSpec that are missing leaf hub name.
 	GetEntriesWithoutLeafHubName(ctx context.Context, tableName string) ([]*spec.ManagedClusterLabelsSpec, error)
-	// UpdateLeafHubNamesOptimistically updates leaf hub name for a given managed cluster under optimistic concurrency.
-	UpdateLeafHubNamesOptimistically(ctx context.Context, tableName string, readVersion int64,
+	// UpdateLeafHubNames updates leaf hub name for a given managed cluster under optimistic concurrency.
+	UpdateLeafHubNames(ctx context.Context, tableName string, readVersion int64,
 		managedClusterName string, leafHubName string) error
 }
 
