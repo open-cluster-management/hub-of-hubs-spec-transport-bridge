@@ -70,7 +70,8 @@ type managedClusterLabelsStatusWatcher struct {
 }
 
 func (watcher *managedClusterLabelsStatusWatcher) Start(ctx context.Context) error {
-	watcher.init(ctx)
+	watcher.log.Info("initialized watcher", "spec table", fmt.Sprintf("spec.%s", watcher.labelsSpecTableName),
+		"status table", fmt.Sprintf("status.%s", watcher.labelsStatusTableName))
 
 	go watcher.updateDeletedLabelsPeriodically(ctx)
 
@@ -81,13 +82,8 @@ func (watcher *managedClusterLabelsStatusWatcher) Start(ctx context.Context) err
 	return nil
 }
 
-func (watcher *managedClusterLabelsStatusWatcher) init(ctx context.Context) {
-	watcher.log.Info("initialized watcher", "spec table", fmt.Sprintf("spec.%s", watcher.labelsSpecTableName),
-		"status table", fmt.Sprintf("status.%s", watcher.labelsStatusTableName))
-}
-
 func (watcher *managedClusterLabelsStatusWatcher) updateDeletedLabelsPeriodically(ctx context.Context) {
-	hubNameFillTicker := time.NewTicker(tempLeafHubNameFillInterval)
+	hubNameFillTicker := time.NewTicker(tempLeafHubNameFillInterval) // TODO: delete when nonk8s-api exposes name.
 	labelsTrimmerTicker := time.NewTicker(watcher.intervalPolicy.GetInterval())
 
 	for {
@@ -124,7 +120,7 @@ func (watcher *managedClusterLabelsStatusWatcher) updateDeletedLabelsPeriodicall
 				watcher.log.Info(fmt.Sprintf("update interval has been reset to %s", reevaluatedInterval.String()))
 			}
 
-		case <-hubNameFillTicker.C: // temp
+		case <-hubNameFillTicker.C: // TODO: delete when nonk8s-api exposes name.
 			// define timeout of max execution interval on the update function
 			ctxWithTimeout, cancelFunc := context.WithTimeout(ctx, watcher.intervalPolicy.GetMaxInterval())
 			watcher.fillMissingLeafHubNames(ctxWithTimeout)
@@ -140,9 +136,9 @@ func (watcher *managedClusterLabelsStatusWatcher) trimDeletedLabelsByStatus(ctx 
 		watcher.log.Error(err, "trimming cycle skipped")
 		return false
 	}
-	// since we have multiple objects and a success/fail must be returned for interval policy, we should evaluate
-	// if the majority passed, and reset if the majority failed.
-	successRate := 0
+
+	result := true
+
 	// iterate over entries
 	for _, managedClusterLabelsSpecBundle := range leafHubToLabelsSpecBundleMap {
 		// fetch actual labels status reflected in status DB
@@ -154,9 +150,8 @@ func (watcher *managedClusterLabelsStatusWatcher) trimDeletedLabelsByStatus(ctx 
 					"leaf hub", managedClusterLabelsSpecBundle.LeafHubName,
 					"managed cluster", managedClusterLabelsSpec.ClusterName,
 					"version", managedClusterLabelsSpec.Version)
-				successRate--
 
-				continue
+				result = false
 			}
 
 			// check which deleted label keys still appear in status
@@ -178,19 +173,19 @@ func (watcher *managedClusterLabelsStatusWatcher) trimDeletedLabelsByStatus(ctx 
 				managedClusterLabelsSpec.ClusterName, deletedLabelsStillInStatus); err != nil {
 				watcher.log.Error(err, "failed to trim deleted_label_keys",
 					"leaf hub", managedClusterLabelsSpecBundle.LeafHubName,
-					"managed cluster", managedClusterLabelsSpec.ClusterName, "version", managedClusterLabelsSpec.Version)
-				successRate--
+					"managed cluster", managedClusterLabelsSpec.ClusterName,
+					"version", managedClusterLabelsSpec.Version)
+				result = false
 
 				continue
 			}
 
 			watcher.log.Info("trimmed labels successfully", "leaf hub", managedClusterLabelsSpecBundle.LeafHubName,
 				"managed cluster", managedClusterLabelsSpec.ClusterName, "version", managedClusterLabelsSpec.Version)
-			successRate++
 		}
 	}
 
-	return successRate > 0
+	return result
 }
 
 // TODO: once non-k8s-restapi exposes hub names, remove line.
@@ -203,9 +198,7 @@ func (watcher *managedClusterLabelsStatusWatcher) fillMissingLeafHubNames(ctx co
 		return false
 	}
 
-	// since we have multiple objects and a success/fail must be returned for interval policy, we should evaluate
-	// if the majority passed, and reset if the majority failed.
-	successRate := 0
+	result := true
 
 	// update leaf hub name for each entry
 	for _, managedClusterLabelsSpec := range entries {
@@ -215,9 +208,8 @@ func (watcher *managedClusterLabelsStatusWatcher) fillMissingLeafHubNames(ctx co
 			watcher.log.Error(err, "failed to get leaf-hub name from status db table",
 				"table", watcher.labelsStatusTableName, "managed cluster name", managedClusterLabelsSpec.ClusterName,
 				"version", managedClusterLabelsSpec.Version)
-			successRate--
 
-			continue
+			result = false
 		}
 
 		// update leaf hub name
@@ -226,17 +218,14 @@ func (watcher *managedClusterLabelsStatusWatcher) fillMissingLeafHubNames(ctx co
 			watcher.log.Error(err, "failed to update leaf hub name for managed cluster in spec db table",
 				"table", watcher.labelsSpecTableName, "managed cluster name", managedClusterLabelsSpec.ClusterName,
 				"version", managedClusterLabelsSpec.Version, "leaf hub name", leafHubName)
-			successRate--
 
-			continue
+			result = false
 		}
-
-		successRate++
 
 		watcher.log.Info("updated leaf hub name for managed cluster in spec db table",
 			"table", watcher.labelsSpecTableName, "managed cluster name", managedClusterLabelsSpec.ClusterName,
 			"leaf hub name", leafHubName, "version", managedClusterLabelsSpec.Version)
 	}
 
-	return successRate > 0
+	return result
 }
