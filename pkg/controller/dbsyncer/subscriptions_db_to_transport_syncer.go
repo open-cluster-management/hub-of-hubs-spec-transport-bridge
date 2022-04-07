@@ -23,13 +23,14 @@ const (
 func AddSubscriptionsDBToTransportSyncer(mgr ctrl.Manager, specDB db.SpecDB, transportObj transport.Transport,
 	syncInterval time.Duration) error {
 	createObjFunc := func() metav1.Object { return &subscriptionsv1.Subscription{} }
+	lastSyncTimestampPtr := &time.Time{}
 
 	if err := mgr.Add(&genericDBToTransportSyncer{
 		log:            ctrl.Log.WithName("subscriptions-db-to-transport-syncer"),
 		intervalPolicy: intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
 		syncBundleFunc: func(ctx context.Context) (bool, error) {
 			return syncObjectsBundle(ctx, transportObj, subscriptionMsgKey, specDB, subscriptionsTableName,
-				createObjFunc, bundle.NewBaseBundle, &time.Time{})
+				createObjFunc, bundle.NewBaseBundle, lastSyncTimestampPtr)
 		},
 	}); err != nil {
 		return fmt.Errorf("failed to add subscriptions db to transport syncer - %w", err)

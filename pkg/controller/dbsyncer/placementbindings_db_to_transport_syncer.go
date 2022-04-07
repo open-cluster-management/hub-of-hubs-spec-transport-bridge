@@ -23,13 +23,14 @@ const (
 func AddPlacementBindingsDBToTransportSyncer(mgr ctrl.Manager, specDB db.SpecDB, transportObj transport.Transport,
 	syncInterval time.Duration) error {
 	createObjFunc := func() metav1.Object { return &policiesv1.PlacementBinding{} }
+	lastSyncTimestampPtr := &time.Time{}
 
 	if err := mgr.Add(&genericDBToTransportSyncer{
 		log:            ctrl.Log.WithName("placement-bindings-db-to-transport-syncer"),
 		intervalPolicy: intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
 		syncBundleFunc: func(ctx context.Context) (bool, error) {
 			return syncObjectsBundle(ctx, transportObj, placementBindingsMsgKey, specDB, placementBindingsTableName,
-				createObjFunc, bundle.NewBaseBundle, &time.Time{})
+				createObjFunc, bundle.NewBaseBundle, lastSyncTimestampPtr)
 		},
 	}); err != nil {
 		return fmt.Errorf("failed to add placement bindings db to transport syncer - %w", err)
