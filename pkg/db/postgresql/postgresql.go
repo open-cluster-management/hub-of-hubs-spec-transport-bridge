@@ -204,26 +204,17 @@ func (p *PostgreSQL) GetEntriesWithDeletedLabels(ctx context.Context,
 // optimistic concurrency approach.
 func (p *PostgreSQL) UpdateDeletedLabelKeys(ctx context.Context, tableName string, readVersion int64,
 	leafHubName string, managedClusterName string, deletedLabelKeys []string) error {
-	exists := false
-	if err := p.conn.QueryRow(ctx, fmt.Sprintf(`SELECT EXISTS(SELECT 1 from spec.%s WHERE leaf_hub_name=$1 AND 
-			managed_cluster_name=$2 AND version=$3)`, tableName), leafHubName, managedClusterName,
-		readVersion).Scan(&exists); err != nil {
-		return fmt.Errorf("failed to read from spec.%s - %w", tableName, err)
+	deletedLabelsJSON, err := json.Marshal(deletedLabelKeys)
+	if err != nil {
+		return fmt.Errorf("failed to marshal deleted labels - %w", err)
 	}
 
-	if exists { // row for (leaf hub, mc, version) tuple exists, update the db.
-		deletedLabelsJSON, err := json.Marshal(deletedLabelKeys)
-		if err != nil {
-			return fmt.Errorf("failed to marshal deleted labels - %w", err)
-		}
-
-		if commandTag, err := p.conn.Exec(ctx, fmt.Sprintf(`UPDATE spec.%s SET updated_at=now(),deleted_label_keys=$1,
-		version=$2	WHERE leaf_hub_name=$3 AND managed_cluster_name=$4 AND version=$5`, tableName), deletedLabelsJSON,
-			readVersion+1, leafHubName, managedClusterName, readVersion); err != nil {
-			return fmt.Errorf("failed to update managed cluster labels row in spec.%s - %w", tableName, err)
-		} else if commandTag.RowsAffected() == 0 {
-			return errOptimisticConcurrencyUpdateFailed
-		}
+	if commandTag, err := p.conn.Exec(ctx, fmt.Sprintf(`UPDATE spec.%s SET updated_at=now(),deleted_label_keys=$1,
+		version=$2 WHERE leaf_hub_name=$3 AND managed_cluster_name=$4 AND version=$5`, tableName), deletedLabelsJSON,
+		readVersion+1, leafHubName, managedClusterName, readVersion); err != nil {
+		return fmt.Errorf("failed to update managed cluster labels row in spec.%s - %w", tableName, err)
+	} else if commandTag.RowsAffected() == 0 {
+		return errOptimisticConcurrencyUpdateFailed
 	}
 
 	return nil
