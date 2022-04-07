@@ -30,7 +30,7 @@ func AddPlacementRulesDBToTransportSyncer(mgr ctrl.Manager, specDB db.SpecDB, tr
 		intervalPolicy: intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
 		syncBundleFunc: func(ctx context.Context) (bool, error) {
 			return syncObjectsBundle(ctx, transportObj, placementRulesMsgKey, specDB, placementRulesTableName,
-				createObjFunc, bundle.NewBaseBundle, lastSyncTimestampPtr)
+				createObjFunc, bundle.NewBaseObjectsBundle, lastSyncTimestampPtr)
 		},
 	}); err != nil {
 		return fmt.Errorf("failed to add placement rules db to transport syncer - %w", err)

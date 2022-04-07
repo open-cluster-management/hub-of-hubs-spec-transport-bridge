@@ -30,7 +30,7 @@ func AddPlacementBindingsDBToTransportSyncer(mgr ctrl.Manager, specDB db.SpecDB,
 		intervalPolicy: intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
 		syncBundleFunc: func(ctx context.Context) (bool, error) {
 			return syncObjectsBundle(ctx, transportObj, placementBindingsMsgKey, specDB, placementBindingsTableName,
-				createObjFunc, bundle.NewBaseBundle, lastSyncTimestampPtr)
+				createObjFunc, bundle.NewBaseObjectsBundle, lastSyncTimestampPtr)
 		},
 	}); err != nil {
 		return fmt.Errorf("failed to add placement bindings db to transport syncer - %w", err)

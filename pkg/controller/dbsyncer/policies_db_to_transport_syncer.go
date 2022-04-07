@@ -30,7 +30,7 @@ func AddPoliciesDBToTransportSyncer(mgr ctrl.Manager, specDB db.SpecDB, transpor
 		intervalPolicy: intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
 		syncBundleFunc: func(ctx context.Context) (bool, error) {
 			return syncObjectsBundle(ctx, transportObj, policiesMsgKey, specDB, policiesTableName,
-				createObjFunc, bundle.NewBaseBundle, lastSyncTimestampPtr)
+				createObjFunc, bundle.NewBaseObjectsBundle, lastSyncTimestampPtr)
 		},
 	}); err != nil {
 		return fmt.Errorf("failed to add policies db to transport syncer - %w", err)

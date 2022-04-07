@@ -30,7 +30,7 @@ func AddApplicationsDBToTransportSyncer(mgr ctrl.Manager, specDB db.SpecDB, tran
 		intervalPolicy: intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
 		syncBundleFunc: func(ctx context.Context) (bool, error) {
 			return syncObjectsBundle(ctx, transportObj, applicationsMsgKey, specDB, applicationsTableName,
-				createObjFunc, bundle.NewBaseBundle, lastSyncTimestampPtr)
+				createObjFunc, bundle.NewBaseObjectsBundle, lastSyncTimestampPtr)
 		},
 	}); err != nil {
 		return fmt.Errorf("failed to add applications db to transport syncer - %w", err)
