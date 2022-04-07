@@ -17,6 +17,4 @@ type ObjectsBundle interface {
 	AddObject(object metav1.Object, objectUID string)
 	// AddDeletedObject adds a deleted object to the bundle.
 	AddDeletedObject(object metav1.Object)
-	// MergeBundle merges the content of another ObjectsBundle into the callee.
-	MergeBundle(other ObjectsBundle) error
 }

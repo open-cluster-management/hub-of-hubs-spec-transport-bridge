@@ -33,23 +33,6 @@ func (b *baseBundle) AddDeletedObject(object metav1.Object) {
 	b.DeletedObjects = append(b.DeletedObjects, object)
 }
 
-// MergeBundle merges the content of another ObjectsBundle into the callee.
-func (b *baseBundle) MergeBundle(other ObjectsBundle) error {
-	if b == other {
-		return nil // don't do anything
-	}
-
-	otherBaseBundle, ok := other.(*baseBundle)
-	if !ok {
-		return errBadType // shouldn't happen
-	}
-
-	b.Objects = append(b.Objects, otherBaseBundle.Objects...)
-	b.DeletedObjects = append(b.DeletedObjects, otherBaseBundle.DeletedObjects...)
-
-	return nil
-}
-
 // setMetaDataAnnotation sets metadata annotation on the given object.
 func setMetaDataAnnotation(object metav1.Object, key string, value string) {
 	annotations := object.GetAnnotations()
