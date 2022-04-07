@@ -178,7 +178,7 @@ func createManager(leaderElectionNamespace string, postgreSQL *postgresql.Postgr
 		return nil, fmt.Errorf("failed to add db syncers: %w", err)
 	}
 
-	if err := controller.AddStatusDBWatchers(mgr, postgreSQL, postgreSQL, syncInterval); err != nil {
+	if err := controller.AddStatusDBWatchers(mgr, postgreSQL, postgreSQL); err != nil {
 		return nil, fmt.Errorf("failed to add db syncers: %w", err)
 	}
 
