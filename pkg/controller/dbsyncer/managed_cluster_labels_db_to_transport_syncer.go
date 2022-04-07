@@ -3,8 +3,6 @@ package dbsyncer
 import (
 	"context"
 	"fmt"
-	"github.com/stolostron/hub-of-hubs-data-types/bundle/spec"
-	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/controller/managed-cluster-sets-tracker"
 	"time"
 
 	datatypes "github.com/stolostron/hub-of-hubs-data-types"
@@ -14,10 +12,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-const (
-	managedClusterLabelsDBTableName = "managed_clusters_labels"
-	managedClusterSetLabelKey       = "cluster.open-cluster-management.io/clusterset"
-)
+const managedClusterLabelsDBTableName = "managed_clusters_labels"
 
 // AddManagedClusterLabelsDBToTransportSyncer adds managed-cluster labels db to transport syncer to the manager.
 func AddManagedClusterLabelsDBToTransportSyncer(mgr ctrl.Manager, specDB db.SpecDB, transportObj transport.Transport,
@@ -67,32 +62,8 @@ func syncManagedClusterLabelsBundles(ctx context.Context, transportObj transport
 		}
 	}
 
-	// track ManagedClusterSet assignments
-	if err := trackManagedClusterSetAssignments(ctx, specDB, leafHubToLabelsSpecBundleMap); err != nil {
-		return false, fmt.Errorf("unable to track managed cluster set label assignments")
-	}
-
 	// updating value to retain same ptr between calls
 	*lastSyncTimestampPtr = *lastUpdateTimestamp
 
 	return true, nil
-}
-
-func trackManagedClusterSetAssignments(ctx context.Context, specDB db.SpecDB,
-	leafHubToLabelsSpecBundleMap map[string]*spec.ManagedClusterLabelsSpecBundle) error {
-	for leafHubName, managedClusterLabelsBundle := range leafHubToLabelsSpecBundleMap {
-		for _, managedClusterLabelsSpec := range managedClusterLabelsBundle.Objects {
-			// make sure MC is tracked if belongs to a set
-			if clusterSetName, found := managedClusterLabelsSpec.Labels[managedClusterSetLabelKey]; found {
-				// found a cluster-set, update tracking
-				if err := specDB.AddManagedClusterSetTracking(ctx, managedClusterSetsTrackingTableName,
-					clusterSetName, leafHubName, managedClusterLabelsSpec.ClusterName); err != nil {
-					return fmt.Errorf("failed to track managed cluster set {%s} assignment for cluster {%s.%s} - %w",
-						clusterSetName, leafHubName, managedClusterLabelsSpec.ClusterName, err)
-				} // the un-tracking should later be supported
-			}
-		}
-	}
-
-	return nil
 }

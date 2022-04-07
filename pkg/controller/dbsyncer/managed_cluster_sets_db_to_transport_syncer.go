@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/bundle"
 	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/db"
 	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/intervalpolicy"
 	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/transport"
@@ -21,22 +22,19 @@ const (
 // AddManagedClusterSetsDBToTransportSyncer adds managed-cluster-sets db to transport syncer to the manager.
 func AddManagedClusterSetsDBToTransportSyncer(mgr ctrl.Manager, specDB db.SpecDB, transportObj transport.Transport,
 	syncInterval time.Duration) error {
+	createObjFunc := func() metav1.Object { return &clusterv1beta1.ManagedClusterSet{} }
 	lastSyncTimestampPtr := &time.Time{}
 
 	if err := mgr.Add(&genericDBToTransportSyncer{
 		log:            ctrl.Log.WithName("managed-cluster-sets-db-to-transport-syncer"),
 		intervalPolicy: intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
 		syncBundleFunc: func(ctx context.Context) (bool, error) {
-			return syncManagedClusterSetResourcesBasedOnTracking(ctx, transportObj, specDB,
-				managedClusterSetsTableName, lastSyncTimestampPtr, true, false)
+			return syncObjectsBundle(ctx, transportObj, managedClusterSetsMsgKey, specDB, managedClusterSetsTableName,
+				createObjFunc, bundle.NewBaseObjectsBundle, lastSyncTimestampPtr)
 		},
 	}); err != nil {
 		return fmt.Errorf("failed to add managed-cluster-sets db to transport syncer - %w", err)
 	}
 
 	return nil
-}
-
-func createManagedClusterSetObjFunc() metav1.Object {
-	return &clusterv1beta1.ManagedClusterSet{}
 }
