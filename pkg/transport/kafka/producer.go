@@ -132,10 +132,10 @@ func (p *Producer) Stop() {
 // SendAsync sends a message to the sync service asynchronously.
 func (p *Producer) SendAsync(destinationHubName string, id string, msgType string, version string, payload []byte) {
 	msg := &transport.Message{
+		Destination: destinationHubName,
 		ID:          id,
 		MsgType:     msgType,
 		Version:     version,
-		Destination: destinationHubName,
 		Payload:     payload,
 	}
 
