@@ -17,7 +17,6 @@ import (
 	"github.com/spf13/pflag"
 	compressor "github.com/stolostron/hub-of-hubs-message-compression"
 	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/controller"
-	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/db"
 	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/db/postgresql"
 	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/transport"
 	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/transport/kafka"
@@ -161,7 +160,7 @@ func doMain() int {
 	return 0
 }
 
-func createManager(leaderElectionNamespace string, postgreSQL db.SpecDB, transportObj transport.Transport,
+func createManager(leaderElectionNamespace string, postgreSQL *postgresql.PostgreSQL, transportObj transport.Transport,
 	syncInterval time.Duration) (ctrl.Manager, error) {
 	options := ctrl.Options{
 		MetricsBindAddress:      fmt.Sprintf("%s:%d", metricsHost, metricsPort),
@@ -176,6 +175,10 @@ func createManager(leaderElectionNamespace string, postgreSQL db.SpecDB, transpo
 	}
 
 	if err := controller.AddDBToTransportSyncers(mgr, postgreSQL, transportObj, syncInterval); err != nil {
+		return nil, fmt.Errorf("failed to add db syncers: %w", err)
+	}
+
+	if err := controller.AddStatusDBWatchers(mgr, postgreSQL, postgreSQL); err != nil {
 		return nil, fmt.Errorf("failed to add db syncers: %w", err)
 	}
 

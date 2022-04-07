@@ -102,6 +102,8 @@ spec:
               value: "9689"
             - name: SYNC_INTERVAL
               value: 5s
+            - name: DELETED_LABELS_TRIMMING_INTERVAL
+              value: 1h
             - name: POD_NAMESPACE
               valueFrom:
                 fieldRef:
