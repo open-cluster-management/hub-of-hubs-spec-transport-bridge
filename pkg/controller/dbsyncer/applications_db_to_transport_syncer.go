@@ -1,6 +1,7 @@
 package dbsyncer
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -19,17 +20,18 @@ const (
 )
 
 // AddApplicationsDBToTransportSyncer adds applications db to transport syncer to the manager.
-func AddApplicationsDBToTransportSyncer(mgr ctrl.Manager, db db.SpecDB, transport transport.Transport,
+func AddApplicationsDBToTransportSyncer(mgr ctrl.Manager, specDB db.SpecDB, transportObj transport.Transport,
 	syncInterval time.Duration) error {
+	createObjFunc := func() metav1.Object { return &appsv1beta1.Application{} }
+	lastSyncTimestampPtr := &time.Time{}
+
 	if err := mgr.Add(&genericDBToTransportSyncer{
-		log:                ctrl.Log.WithName("applications-db-to-transport-syncer"),
-		db:                 db,
-		dbTableName:        applicationsTableName,
-		transport:          transport,
-		transportBundleKey: applicationsMsgKey,
-		createObjFunc:      func() metav1.Object { return &appsv1beta1.Application{} },
-		createBundleFunc:   bundle.NewBaseBundle,
-		intervalPolicy:     intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
+		log:            ctrl.Log.WithName("applications-db-to-transport-syncer"),
+		intervalPolicy: intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
+		syncBundleFunc: func(ctx context.Context) (bool, error) {
+			return syncObjectsBundle(ctx, transportObj, applicationsMsgKey, specDB, applicationsTableName,
+				createObjFunc, bundle.NewBaseObjectsBundle, lastSyncTimestampPtr)
+		},
 	}); err != nil {
 		return fmt.Errorf("failed to add applications db to transport syncer - %w", err)
 	}

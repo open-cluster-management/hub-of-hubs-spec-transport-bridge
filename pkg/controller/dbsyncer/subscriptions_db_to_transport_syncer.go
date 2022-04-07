@@ -1,6 +1,7 @@
 package dbsyncer
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -19,17 +20,18 @@ const (
 )
 
 // AddSubscriptionsDBToTransportSyncer adds subscriptions db to transport syncer to the manager.
-func AddSubscriptionsDBToTransportSyncer(mgr ctrl.Manager, db db.SpecDB, transport transport.Transport,
+func AddSubscriptionsDBToTransportSyncer(mgr ctrl.Manager, specDB db.SpecDB, transportObj transport.Transport,
 	syncInterval time.Duration) error {
+	createObjFunc := func() metav1.Object { return &subscriptionsv1.Subscription{} }
+	lastSyncTimestampPtr := &time.Time{}
+
 	if err := mgr.Add(&genericDBToTransportSyncer{
-		log:                ctrl.Log.WithName("subscriptions-db-to-transport-syncer"),
-		db:                 db,
-		dbTableName:        subscriptionsTableName,
-		transport:          transport,
-		transportBundleKey: subscriptionMsgKey,
-		createObjFunc:      func() metav1.Object { return &subscriptionsv1.Subscription{} },
-		createBundleFunc:   bundle.NewBaseBundle,
-		intervalPolicy:     intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
+		log:            ctrl.Log.WithName("subscriptions-db-to-transport-syncer"),
+		intervalPolicy: intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
+		syncBundleFunc: func(ctx context.Context) (bool, error) {
+			return syncObjectsBundle(ctx, transportObj, subscriptionMsgKey, specDB, subscriptionsTableName,
+				createObjFunc, bundle.NewBaseObjectsBundle, lastSyncTimestampPtr)
+		},
 	}); err != nil {
 		return fmt.Errorf("failed to add subscriptions db to transport syncer - %w", err)
 	}

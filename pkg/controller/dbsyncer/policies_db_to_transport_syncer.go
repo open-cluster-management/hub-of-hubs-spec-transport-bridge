@@ -1,6 +1,7 @@
 package dbsyncer
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -19,17 +20,18 @@ const (
 )
 
 // AddPoliciesDBToTransportSyncer adds policies db to transport syncer to the manager.
-func AddPoliciesDBToTransportSyncer(mgr ctrl.Manager, db db.SpecDB, transport transport.Transport,
+func AddPoliciesDBToTransportSyncer(mgr ctrl.Manager, specDB db.SpecDB, transportObj transport.Transport,
 	syncInterval time.Duration) error {
+	createObjFunc := func() metav1.Object { return &policiesv1.Policy{} }
+	lastSyncTimestampPtr := &time.Time{}
+
 	if err := mgr.Add(&genericDBToTransportSyncer{
-		log:                ctrl.Log.WithName("policy-db-to-transport-syncer"),
-		db:                 db,
-		dbTableName:        policiesTableName,
-		transport:          transport,
-		transportBundleKey: policiesMsgKey,
-		createObjFunc:      func() metav1.Object { return &policiesv1.Policy{} },
-		createBundleFunc:   bundle.NewBaseBundle,
-		intervalPolicy:     intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
+		log:            ctrl.Log.WithName("policies-db-to-transport-syncer"),
+		intervalPolicy: intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
+		syncBundleFunc: func(ctx context.Context) (bool, error) {
+			return syncObjectsBundle(ctx, transportObj, policiesMsgKey, specDB, policiesTableName,
+				createObjFunc, bundle.NewBaseObjectsBundle, lastSyncTimestampPtr)
+		},
 	}); err != nil {
 		return fmt.Errorf("failed to add policies db to transport syncer - %w", err)
 	}

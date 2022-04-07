@@ -96,24 +96,15 @@ func (s *SyncService) Stop() {
 }
 
 // SendAsync sends a message to the sync service asynchronously.
-func (s *SyncService) SendAsync(id string, msgType string, version string, payload []byte) {
+func (s *SyncService) SendAsync(destinationHubName string, id string, msgType string, version string, payload []byte) {
 	message := &transport.Message{
-		ID:      id,
-		MsgType: msgType,
-		Version: version,
-		Payload: payload,
+		Destination: destinationHubName,
+		ID:          id,
+		MsgType:     msgType,
+		Version:     version,
+		Payload:     payload,
 	}
 	s.msgChan <- message
-}
-
-// GetVersion returns the version of an object, or an empty string if the object doesn't exist or an error occurred.
-func (s *SyncService) GetVersion(id string, msgType string) string {
-	objectMetadata, err := s.client.GetObjectMetadata(msgType, id)
-	if err != nil {
-		return ""
-	}
-
-	return objectMetadata.Version
 }
 
 func (s *SyncService) distributeMessages() {
@@ -127,6 +118,11 @@ func (s *SyncService) distributeMessages() {
 				ObjectType:  msg.MsgType,
 				Version:     msg.Version,
 				Description: fmt.Sprintf("%s:%s", compressionHeader, s.compressor.GetType()),
+				DestID:      msg.Destination, // if broadcast then empty, works as usual.
+			}
+
+			if msg.Destination != transport.Broadcast { // only if specific to a hub, modify obj id
+				objectMetaData.ObjectID = fmt.Sprintf("%s.%s", msg.Destination, msg.ID)
 			}
 
 			if err := s.client.UpdateObject(&objectMetaData); err != nil {
