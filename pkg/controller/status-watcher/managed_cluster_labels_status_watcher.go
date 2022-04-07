@@ -147,8 +147,8 @@ func (watcher *managedClusterLabelsStatusWatcher) trimDeletedLabelsByStatus(ctx 
 				managedClusterLabelsSpecBundle.LeafHubName, managedClusterLabelsSpec.ClusterName)
 			if err != nil {
 				watcher.log.Error(err, "skipped trimming managed cluster labels spec",
-					"leaf hub", managedClusterLabelsSpecBundle.LeafHubName,
-					"managed cluster", managedClusterLabelsSpec.ClusterName,
+					"leafHub", managedClusterLabelsSpecBundle.LeafHubName,
+					"managedCluster", managedClusterLabelsSpec.ClusterName,
 					"version", managedClusterLabelsSpec.Version)
 
 				result = false
@@ -172,16 +172,16 @@ func (watcher *managedClusterLabelsStatusWatcher) trimDeletedLabelsByStatus(ctx 
 				managedClusterLabelsSpec.Version, managedClusterLabelsSpecBundle.LeafHubName,
 				managedClusterLabelsSpec.ClusterName, deletedLabelsStillInStatus); err != nil {
 				watcher.log.Error(err, "failed to trim deleted_label_keys",
-					"leaf hub", managedClusterLabelsSpecBundle.LeafHubName,
-					"managed cluster", managedClusterLabelsSpec.ClusterName,
+					"leafHub", managedClusterLabelsSpecBundle.LeafHubName,
+					"managedCluster", managedClusterLabelsSpec.ClusterName,
 					"version", managedClusterLabelsSpec.Version)
 				result = false
 
 				continue
 			}
 
-			watcher.log.Info("trimmed labels successfully", "leaf hub", managedClusterLabelsSpecBundle.LeafHubName,
-				"managed cluster", managedClusterLabelsSpec.ClusterName, "version", managedClusterLabelsSpec.Version)
+			watcher.log.Info("trimmed labels successfully", "leafHub", managedClusterLabelsSpecBundle.LeafHubName,
+				"managedCluster", managedClusterLabelsSpec.ClusterName, "version", managedClusterLabelsSpec.Version)
 		}
 	}
 
@@ -189,16 +189,12 @@ func (watcher *managedClusterLabelsStatusWatcher) trimDeletedLabelsByStatus(ctx 
 }
 
 // TODO: once non-k8s-restapi exposes hub names, remove line.
-func (watcher *managedClusterLabelsStatusWatcher) fillMissingLeafHubNames(ctx context.Context) bool {
+func (watcher *managedClusterLabelsStatusWatcher) fillMissingLeafHubNames(ctx context.Context) {
 	entries, err := watcher.specDB.GetEntriesWithoutLeafHubName(ctx, watcher.labelsSpecTableName)
 	if err != nil {
 		watcher.log.Error(err, "failed to fetch entries with no leaf-hub-name from spec db table", "table",
 			watcher.labelsSpecTableName)
-
-		return false
 	}
-
-	result := true
 
 	// update leaf hub name for each entry
 	for _, managedClusterLabelsSpec := range entries {
@@ -206,26 +202,20 @@ func (watcher *managedClusterLabelsStatusWatcher) fillMissingLeafHubNames(ctx co
 			watcher.labelsStatusTableName, managedClusterLabelsSpec.ClusterName)
 		if err != nil {
 			watcher.log.Error(err, "failed to get leaf-hub name from status db table",
-				"table", watcher.labelsStatusTableName, "managed cluster name", managedClusterLabelsSpec.ClusterName,
+				"table", watcher.labelsStatusTableName, "managedCluster", managedClusterLabelsSpec.ClusterName,
 				"version", managedClusterLabelsSpec.Version)
-
-			result = false
 		}
 
 		// update leaf hub name
 		if err := watcher.specDB.UpdateLeafHubName(ctx, watcher.labelsSpecTableName,
 			managedClusterLabelsSpec.Version, managedClusterLabelsSpec.ClusterName, leafHubName); err != nil {
 			watcher.log.Error(err, "failed to update leaf hub name for managed cluster in spec db table",
-				"table", watcher.labelsSpecTableName, "managed cluster name", managedClusterLabelsSpec.ClusterName,
-				"version", managedClusterLabelsSpec.Version, "leaf hub name", leafHubName)
-
-			result = false
+				"table", watcher.labelsSpecTableName, "managedCluster", managedClusterLabelsSpec.ClusterName,
+				"version", managedClusterLabelsSpec.Version, "leafHub", leafHubName)
 		}
 
 		watcher.log.Info("updated leaf hub name for managed cluster in spec db table",
-			"table", watcher.labelsSpecTableName, "managed cluster name", managedClusterLabelsSpec.ClusterName,
-			"leaf hub name", leafHubName, "version", managedClusterLabelsSpec.Version)
+			"table", watcher.labelsSpecTableName, "managedCluster", managedClusterLabelsSpec.ClusterName,
+			"leafHub", leafHubName, "version", managedClusterLabelsSpec.Version)
 	}
-
-	return result
 }
