@@ -140,8 +140,6 @@ func (watcher *managedClusterLabelsStatusWatcher) trimDeletedLabelsByStatus(ctx 
 		watcher.log.Error(err, "trimming cycle skipped")
 		return false
 	}
-	// remove entries with no LH name (temporary state)
-	delete(leafHubToLabelsSpecBundleMap, "") // TODO: once non-k8s-restapi exposes hub names, remove line.
 	// since we have multiple objects and a success/fail must be returned for interval policy, we should evaluate
 	// if the majority passed, and reset if the majority failed.
 	successRate := 0

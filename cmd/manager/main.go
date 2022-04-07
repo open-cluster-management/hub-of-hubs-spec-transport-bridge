@@ -21,8 +21,6 @@ import (
 	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/transport"
 	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/transport/kafka"
 	syncservice "github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/transport/sync-service"
-
-	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
 )

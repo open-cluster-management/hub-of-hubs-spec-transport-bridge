@@ -123,50 +123,17 @@ func (p *PostgreSQL) GetUpdatedManagedClusterLabelsBundles(ctx context.Context, 
 
 	defer rows.Close()
 
-	leafHubToLabelsSpecBundleMap, err := p.getLabelsSpecBundlesFromRows(rows)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get managed cluster labels bundles - %w", err)
-	}
-
-	return leafHubToLabelsSpecBundleMap, nil
-}
-
-// GetEntriesWithDeletedLabels returns a map of leaf-hub -> ManagedClusterLabelsSpecBundle of objects that have a
-// none-empty deleted-label-keys column.
-func (p *PostgreSQL) GetEntriesWithDeletedLabels(ctx context.Context,
-	tableName string) (map[string]*spec.ManagedClusterLabelsSpecBundle, error) {
-	rows, err := p.conn.Query(ctx, fmt.Sprintf(`SELECT leaf_hub_name,managed_cluster_name,labels,
-deleted_label_keys,updated_at,version FROM spec.%s WHERE deleted_label_keys != '[]'`, tableName))
-	if err != nil {
-		return nil, fmt.Errorf("failed to query table spec.%s - %w", tableName, err)
-	}
-
-	defer rows.Close()
-
-	leafHubToLabelsSpecBundleMap, err := p.getLabelsSpecBundlesFromRows(rows)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get managed cluster spec entries with deleted labels - %w", err)
-	}
-
-	return leafHubToLabelsSpecBundleMap, nil
-}
-
-func (p *PostgreSQL) getLabelsSpecBundlesFromRows(rows pgx.Rows) (map[string]*spec.ManagedClusterLabelsSpecBundle,
-	error) {
 	leafHubToLabelsSpecBundleMap := make(map[string]*spec.ManagedClusterLabelsSpecBundle)
 
 	for rows.Next() {
 		var (
-			leafHubName        string
-			managedClusterName string
-			labels             map[string]string
-			deletedLabelKeys   []string
-			updatedAt          time.Time
-			version            int64
+			leafHubName              string
+			managedClusterLabelsSpec spec.ManagedClusterLabelsSpec
 		)
 
-		if err := rows.Scan(&leafHubName, &managedClusterName, &labels, &deletedLabelKeys, &updatedAt,
-			&version); err != nil {
+		if err := rows.Scan(&leafHubName, &managedClusterLabelsSpec.ClusterName, &managedClusterLabelsSpec.Labels,
+			&managedClusterLabelsSpec.DeletedLabelKeys, &managedClusterLabelsSpec.UpdateTimestamp,
+			&managedClusterLabelsSpec.Version); err != nil {
 			return nil, fmt.Errorf("error reading from table - %w", err)
 		}
 
@@ -183,13 +150,51 @@ func (p *PostgreSQL) getLabelsSpecBundlesFromRows(rows pgx.Rows) (map[string]*sp
 
 		// append entry to bundle
 		managedClusterLabelsSpecBundle.Objects = append(managedClusterLabelsSpecBundle.Objects,
-			&spec.ManagedClusterLabelsSpec{
-				ClusterName:      managedClusterName,
-				Labels:           labels,
-				DeletedLabelKeys: deletedLabelKeys,
-				UpdateTimestamp:  updatedAt,
-				Version:          version,
-			})
+			&managedClusterLabelsSpec)
+	}
+
+	return leafHubToLabelsSpecBundleMap, nil
+}
+
+// GetEntriesWithDeletedLabels returns a map of leaf-hub -> ManagedClusterLabelsSpecBundle of objects that have a
+// none-empty deleted-label-keys column.
+func (p *PostgreSQL) GetEntriesWithDeletedLabels(ctx context.Context,
+	tableName string) (map[string]*spec.ManagedClusterLabelsSpecBundle, error) {
+	rows, err := p.conn.Query(ctx, fmt.Sprintf(`SELECT leaf_hub_name,managed_cluster_name,deleted_label_keys,version 
+		FROM spec.%s WHERE deleted_label_keys != '[]' AND leaf_hub_name != ''`, tableName))
+	if err != nil {
+		return nil, fmt.Errorf("failed to query table spec.%s - %w", tableName, err)
+	}
+
+	defer rows.Close()
+
+	leafHubToLabelsSpecBundleMap := make(map[string]*spec.ManagedClusterLabelsSpecBundle)
+
+	for rows.Next() {
+		var (
+			leafHubName              string
+			managedClusterLabelsSpec spec.ManagedClusterLabelsSpec
+		)
+
+		if err := rows.Scan(&leafHubName, &managedClusterLabelsSpec.ClusterName,
+			&managedClusterLabelsSpec.DeletedLabelKeys, &managedClusterLabelsSpec.Version); err != nil {
+			return nil, fmt.Errorf("error reading from table - %w", err)
+		}
+
+		// create ManagedClusterLabelsSpecBundle if not mapped for leafHub
+		managedClusterLabelsSpecBundle, found := leafHubToLabelsSpecBundleMap[leafHubName]
+		if !found {
+			managedClusterLabelsSpecBundle = &spec.ManagedClusterLabelsSpecBundle{
+				Objects:     []*spec.ManagedClusterLabelsSpec{},
+				LeafHubName: leafHubName,
+			}
+
+			leafHubToLabelsSpecBundleMap[leafHubName] = managedClusterLabelsSpecBundle
+		}
+
+		// append entry to bundle
+		managedClusterLabelsSpecBundle.Objects = append(managedClusterLabelsSpecBundle.Objects,
+			&managedClusterLabelsSpec)
 	}
 
 	return leafHubToLabelsSpecBundleMap, nil
