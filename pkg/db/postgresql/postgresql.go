@@ -256,8 +256,8 @@ func (p *PostgreSQL) GetEntriesWithoutLeafHubName(ctx context.Context,
 	return managedClusterLabelsSpecSlice, nil
 }
 
-// UpdateLeafHubNames updates leaf hub name for a given managed cluster under optimistic concurrency.
-func (p *PostgreSQL) UpdateLeafHubNames(ctx context.Context, tableName string, readVersion int64,
+// UpdateLeafHubName updates leaf hub name for a given managed cluster under optimistic concurrency.
+func (p *PostgreSQL) UpdateLeafHubName(ctx context.Context, tableName string, readVersion int64,
 	managedClusterName string, leafHubName string) error {
 	if commandTag, err := p.conn.Exec(ctx, fmt.Sprintf(`UPDATE spec.%s SET updated_at=now(),leaf_hub_name=$1,version=$2 
 				WHERE managed_cluster_name=$3 AND version=$4`, tableName), leafHubName, readVersion+1,

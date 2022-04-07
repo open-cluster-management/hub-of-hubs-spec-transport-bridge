@@ -46,8 +46,8 @@ type ManagedClusterLabelsSpecDB interface {
 type TempManagedClusterLabelsSpecDB interface {
 	// GetEntriesWithoutLeafHubName returns a slice of ManagedClusterLabelsSpec that are missing leaf hub name.
 	GetEntriesWithoutLeafHubName(ctx context.Context, tableName string) ([]*spec.ManagedClusterLabelsSpec, error)
-	// UpdateLeafHubNames updates leaf hub name for a given managed cluster under optimistic concurrency.
-	UpdateLeafHubNames(ctx context.Context, tableName string, readVersion int64,
+	// UpdateLeafHubName updates leaf hub name for a given managed cluster under optimistic concurrency.
+	UpdateLeafHubName(ctx context.Context, tableName string, readVersion int64,
 		managedClusterName string, leafHubName string) error
 }
 
