@@ -37,7 +37,6 @@ const (
 	syncServiceTransportTypeName            = "sync-service"
 	envVarSyncInterval                      = "SYNC_INTERVAL"
 	leaderElectionLockName                  = "hub-of-hubs-spec-transport-bridge-lock"
-	statusDBWatchIntervalMultiplier         = 3
 )
 
 var (
@@ -179,8 +178,7 @@ func createManager(leaderElectionNamespace string, postgreSQL *postgresql.Postgr
 		return nil, fmt.Errorf("failed to add db syncers: %w", err)
 	}
 
-	if err := controller.AddStatusDBWatchers(mgr, postgreSQL, postgreSQL,
-		syncInterval*statusDBWatchIntervalMultiplier); err != nil {
+	if err := controller.AddStatusDBWatchers(mgr, postgreSQL, postgreSQL, syncInterval); err != nil {
 		return nil, fmt.Errorf("failed to add db syncers: %w", err)
 	}
 

@@ -2,7 +2,9 @@ package statuswatcher
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -12,26 +14,48 @@ import (
 )
 
 const (
-	managedClusterLabelsSpecDBTableName        = "managed_clusters_labels"
-	managedClusterLabelsStatusDBTableName      = "managed_clusters"
-	deletedLabelKeysTrimmingIntervalMultiplier = 100 // low frequency
+	managedClusterLabelsSpecDBTableName   = "managed_clusters_labels"
+	managedClusterLabelsStatusDBTableName = "managed_clusters"
+	envVarLabelsTrimmingInterval          = "DELETED_LABELS_TRIMMING_INTERVAL"
+	tempLeafHubNameFillInterval           = 10 * time.Second
 )
 
+var errEnvVarNotFound = errors.New("environment variable not found")
+
 // AddManagedClusterLabelsStatusWatcher adds managedClusterLabelsStatusWatcher to the manager.
-func AddManagedClusterLabelsStatusWatcher(mgr ctrl.Manager, specDB db.SpecDB, statusDB db.StatusDB,
-	syncInterval time.Duration) error {
+func AddManagedClusterLabelsStatusWatcher(mgr ctrl.Manager, specDB db.SpecDB, statusDB db.StatusDB) error {
+	deletedLabelsTrimmingInterval, err := readEnvVars()
+	if err != nil {
+		return fmt.Errorf("failed to add managed-cluster labels status watcher - %w", err)
+	}
+
 	if err := mgr.Add(&managedClusterLabelsStatusWatcher{
 		log:                   ctrl.Log.WithName("managed-cluster-labels-status-watcher"),
 		specDB:                specDB,
 		statusDB:              statusDB,
 		labelsSpecTableName:   managedClusterLabelsSpecDBTableName,
 		labelsStatusTableName: managedClusterLabelsStatusDBTableName,
-		intervalPolicy:        intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
+		intervalPolicy:        intervalpolicy.NewExponentialBackoffPolicy(deletedLabelsTrimmingInterval),
 	}); err != nil {
 		return fmt.Errorf("failed to add managed-cluster labels status watcher - %w", err)
 	}
 
 	return nil
+}
+
+func readEnvVars() (time.Duration, error) {
+	deletedLabelsTrimmingIntervalString, found := os.LookupEnv(envVarLabelsTrimmingInterval)
+	if !found {
+		return 0, fmt.Errorf("%w: %s", errEnvVarNotFound, envVarLabelsTrimmingInterval)
+	}
+
+	deletedLabelsTrimmingInterval, err := time.ParseDuration(deletedLabelsTrimmingIntervalString)
+	if err != nil {
+		return 0, fmt.Errorf("the environment var %s is not a valid duration - %w",
+			envVarLabelsTrimmingInterval, err)
+	}
+
+	return deletedLabelsTrimmingInterval, nil
 }
 
 // managedClusterLabelsStatusWatcher watches the status managed-clusters status table to sync and update spec
@@ -63,9 +87,8 @@ func (watcher *managedClusterLabelsStatusWatcher) init(ctx context.Context) {
 }
 
 func (watcher *managedClusterLabelsStatusWatcher) updateDeletedLabelsPeriodically(ctx context.Context) {
-	hubNameFillTicker := time.NewTicker(watcher.intervalPolicy.GetInterval())
-	labelsTrimmerTicker := time.NewTicker(watcher.intervalPolicy.GetInterval() *
-		deletedLabelKeysTrimmingIntervalMultiplier)
+	hubNameFillTicker := time.NewTicker(tempLeafHubNameFillInterval)
+	labelsTrimmerTicker := time.NewTicker(watcher.intervalPolicy.GetInterval())
 
 	for {
 		select {
@@ -75,10 +98,10 @@ func (watcher *managedClusterLabelsStatusWatcher) updateDeletedLabelsPeriodicall
 
 			return
 
-		case <-hubNameFillTicker.C:
+		case <-labelsTrimmerTicker.C:
 			// define timeout of max execution interval on the update function
 			ctxWithTimeout, cancelFunc := context.WithTimeout(ctx, watcher.intervalPolicy.GetMaxInterval())
-			updated := watcher.fillMissingLeafHubNames(ctxWithTimeout)
+			updated := watcher.trimDeletedLabelsByStatus(ctxWithTimeout)
 
 			cancelFunc() // cancel child ctx and is used to cleanup resources once context expires or update is done.
 
@@ -101,10 +124,10 @@ func (watcher *managedClusterLabelsStatusWatcher) updateDeletedLabelsPeriodicall
 				watcher.log.Info(fmt.Sprintf("update interval has been reset to %s", reevaluatedInterval.String()))
 			}
 
-		case <-labelsTrimmerTicker.C:
+		case <-hubNameFillTicker.C: // temp
 			// define timeout of max execution interval on the update function
 			ctxWithTimeout, cancelFunc := context.WithTimeout(ctx, watcher.intervalPolicy.GetMaxInterval())
-			watcher.trimDeletedLabelsByStatus(ctxWithTimeout)
+			watcher.fillMissingLeafHubNames(ctxWithTimeout)
 
 			cancelFunc() // cancel child ctx and is used to cleanup resources once context expires or update is done.
 		}

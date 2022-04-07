@@ -12,8 +12,6 @@ import (
 type SpecDB interface {
 	// GetLastUpdateTimestamp returns the last update timestamp of a specific table.
 	GetLastUpdateTimestamp(ctx context.Context, tableName string, filterLocalResources bool) (*time.Time, error)
-	// Stop stops db and releases resources (e.g. connection pool).
-	Stop()
 
 	ObjectsSpecDB
 	ManagedClusterLabelsSpecDB
@@ -58,8 +56,6 @@ type StatusDB interface {
 	// GetManagedClusterLabelsStatus gets the labels present in managed-cluster CR metadata from a specific table.
 	GetManagedClusterLabelsStatus(ctx context.Context, tableName string, leafHubName string,
 		managedClusterName string) (map[string]string, error)
-	// Stop stops db and releases resources (e.g. connection pool).
-	Stop()
 	TempStatusDB
 }
 
