@@ -1,13 +1,9 @@
 package bundle
 
 import (
-	"errors"
-
 	datatypes "github.com/stolostron/hub-of-hubs-data-types"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
-
-var errBadType = errors.New("ObjectBundle type mismatch, should be a baseBundle")
 
 // NewBaseBundle creates a new base bundle with no data in it.
 func NewBaseBundle() ObjectsBundle {
