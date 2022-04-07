@@ -21,16 +21,22 @@ const (
 // AddPoliciesDBToTransportSyncer adds policies db to transport syncer to the manager.
 func AddPoliciesDBToTransportSyncer(mgr ctrl.Manager, db db.SpecDB, transport transport.Transport,
 	syncInterval time.Duration) error {
-	if err := mgr.Add(&genericDBToTransportSyncer{
-		log:                ctrl.Log.WithName("policy-db-to-transport-syncer"),
-		db:                 db,
-		dbTableName:        policiesTableName,
-		transport:          transport,
-		transportBundleKey: policiesMsgKey,
-		createObjFunc:      func() metav1.Object { return &policiesv1.Policy{} },
-		createBundleFunc:   bundle.NewBaseBundle,
-		intervalPolicy:     intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
-	}); err != nil {
+	dbToTransportSyncer := &genericObjectsDBToTransportSyncer{
+		genericDBToTransportSyncer: &genericDBToTransportSyncer{
+			log:                ctrl.Log.WithName("policy-db-to-transport-syncer"),
+			db:                 db,
+			dbTableName:        policiesTableName,
+			transport:          transport,
+			transportBundleKey: policiesMsgKey,
+			intervalPolicy:     intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
+		},
+		createObjFunc:    func() metav1.Object { return &policiesv1.Policy{} },
+		createBundleFunc: bundle.NewBaseBundle,
+	}
+
+	dbToTransportSyncer.syncBundleFunc = dbToTransportSyncer.syncObjectsBundle
+
+	if err := mgr.Add(dbToTransportSyncer); err != nil {
 		return fmt.Errorf("failed to add policies db to transport syncer - %w", err)
 	}
 

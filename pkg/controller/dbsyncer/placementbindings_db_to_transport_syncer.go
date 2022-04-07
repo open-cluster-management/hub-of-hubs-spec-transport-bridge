@@ -21,16 +21,22 @@ const (
 // AddPlacementBindingsDBToTransportSyncer adds placement bindings db to transport syncer to the manager.
 func AddPlacementBindingsDBToTransportSyncer(mgr ctrl.Manager, db db.SpecDB, transport transport.Transport,
 	syncInterval time.Duration) error {
-	if err := mgr.Add(&genericDBToTransportSyncer{
-		log:                ctrl.Log.WithName("placement-bindings-db-to-transport-syncer"),
-		db:                 db,
-		dbTableName:        placementBindingsTableName,
-		transport:          transport,
-		transportBundleKey: placementBindingsMsgKey,
-		createObjFunc:      func() metav1.Object { return &policiesv1.PlacementBinding{} },
-		createBundleFunc:   bundle.NewBaseBundle,
-		intervalPolicy:     intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
-	}); err != nil {
+	dbToTransportSyncer := &genericObjectsDBToTransportSyncer{
+		genericDBToTransportSyncer: &genericDBToTransportSyncer{
+			log:                ctrl.Log.WithName("placement-bindings-db-to-transport-syncer"),
+			db:                 db,
+			dbTableName:        placementBindingsTableName,
+			transport:          transport,
+			transportBundleKey: placementBindingsMsgKey,
+			intervalPolicy:     intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
+		},
+		createObjFunc:    func() metav1.Object { return &policiesv1.PlacementBinding{} },
+		createBundleFunc: bundle.NewBaseBundle,
+	}
+
+	dbToTransportSyncer.syncBundleFunc = dbToTransportSyncer.syncObjectsBundle
+
+	if err := mgr.Add(dbToTransportSyncer); err != nil {
 		return fmt.Errorf("failed to add placement bindings db to transport syncer - %w", err)
 	}
 
