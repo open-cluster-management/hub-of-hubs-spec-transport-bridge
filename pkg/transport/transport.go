@@ -9,8 +9,6 @@ type Transport interface {
 	//
 	// destinationHubName specifies a specific destination for distribution or specifies broadcasting if empty.
 	SendAsync(destinationHubName string, id string, msgType string, version string, payload []byte)
-	// GetVersion returns the latest version of a message from transport.
-	GetVersion(id string, msgType string) string
 	// Start starts the transport.
 	Start()
 	// Stop stops the transport.

@@ -107,16 +107,6 @@ func (s *SyncService) SendAsync(destinationHubName string, id string, msgType st
 	s.msgChan <- message
 }
 
-// GetVersion returns the version of an object, or an empty string if the object doesn't exist or an error occurred.
-func (s *SyncService) GetVersion(id string, msgType string) string {
-	objectMetadata, err := s.client.GetObjectMetadata(msgType, id)
-	if err != nil {
-		return ""
-	}
-
-	return objectMetadata.Version
-}
-
 func (s *SyncService) distributeMessages() {
 	for {
 		select {

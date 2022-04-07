@@ -25,14 +25,11 @@ func AddPoliciesDBToTransportSyncer(mgr ctrl.Manager, specDB db.SpecDB, transpor
 	createObjFunc := func() metav1.Object { return &policiesv1.Policy{} }
 
 	if err := mgr.Add(&genericDBToTransportSyncer{
-		log:                ctrl.Log.WithName("policies-db-to-transport-syncer"),
-		transport:          transportObj,
-		transportBundleKey: policiesMsgKey,
-		intervalPolicy:     intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
-		syncBundleFunc: func(ctx context.Context, transportObj transport.Transport, transportBundleKey string,
-			lastSyncTimestampPtr *time.Time) (bool, error) {
-			return syncObjectsBundle(ctx, transportObj, transportBundleKey, specDB, policiesTableName,
-				createObjFunc, bundle.NewBaseBundle, lastSyncTimestampPtr)
+		log:            ctrl.Log.WithName("policies-db-to-transport-syncer"),
+		intervalPolicy: intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
+		syncBundleFunc: func(ctx context.Context) (bool, error) {
+			return syncObjectsBundle(ctx, transportObj, policiesMsgKey, specDB, policiesTableName,
+				createObjFunc, bundle.NewBaseBundle, &time.Time{})
 		},
 	}); err != nil {
 		return fmt.Errorf("failed to add policies db to transport syncer - %w", err)

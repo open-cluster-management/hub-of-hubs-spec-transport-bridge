@@ -178,11 +178,6 @@ func (p *Producer) SendAsync(destinationHubName string, id string, msgType strin
 		"Version", msg.Version, "Destination", msg.Destination)
 }
 
-// GetVersion returns an empty string if the object doesn't exist or an error occurred.
-func (p *Producer) GetVersion(_ string, _ string) string {
-	return ""
-}
-
 func (p *Producer) deliveryReportHandler() {
 	for {
 		select {

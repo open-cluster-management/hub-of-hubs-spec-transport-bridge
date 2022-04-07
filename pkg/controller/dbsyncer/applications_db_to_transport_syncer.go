@@ -25,14 +25,11 @@ func AddApplicationsDBToTransportSyncer(mgr ctrl.Manager, specDB db.SpecDB, tran
 	createObjFunc := func() metav1.Object { return &appsv1beta1.Application{} }
 
 	if err := mgr.Add(&genericDBToTransportSyncer{
-		log:                ctrl.Log.WithName("applications-db-to-transport-syncer"),
-		transport:          transportObj,
-		transportBundleKey: applicationsMsgKey,
-		intervalPolicy:     intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
-		syncBundleFunc: func(ctx context.Context, transportObj transport.Transport, transportBundleKey string,
-			lastSyncTimestampPtr *time.Time) (bool, error) {
-			return syncObjectsBundle(ctx, transportObj, transportBundleKey, specDB, applicationsTableName,
-				createObjFunc, bundle.NewBaseBundle, lastSyncTimestampPtr)
+		log:            ctrl.Log.WithName("applications-db-to-transport-syncer"),
+		intervalPolicy: intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
+		syncBundleFunc: func(ctx context.Context) (bool, error) {
+			return syncObjectsBundle(ctx, transportObj, applicationsMsgKey, specDB, applicationsTableName,
+				createObjFunc, bundle.NewBaseBundle, &time.Time{})
 		},
 	}); err != nil {
 		return fmt.Errorf("failed to add applications db to transport syncer - %w", err)

@@ -18,14 +18,11 @@ const managedClusterLabelsDBTableName = "managed_clusters_labels"
 func AddManagedClusterLabelsDBToTransportSyncer(mgr ctrl.Manager, specDB db.SpecDB, transportObj transport.Transport,
 	syncInterval time.Duration) error {
 	if err := mgr.Add(&genericDBToTransportSyncer{
-		log:                ctrl.Log.WithName("managed-cluster-labels-db-to-transport-syncer"),
-		transport:          transportObj,
-		transportBundleKey: datatypes.ManagedClustersLabelsMsgKey,
-		intervalPolicy:     intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
-		syncBundleFunc: func(ctx context.Context, transportObj transport.Transport, transportBundleKey string,
-			lastSyncTimestampPtr *time.Time) (bool, error) {
-			return syncManagedClusterLabelsBundles(ctx, transportObj, transportBundleKey, specDB,
-				managedClusterLabelsDBTableName, lastSyncTimestampPtr)
+		log:            ctrl.Log.WithName("managed-cluster-labels-db-to-transport-syncer"),
+		intervalPolicy: intervalpolicy.NewExponentialBackoffPolicy(syncInterval),
+		syncBundleFunc: func(ctx context.Context) (bool, error) {
+			return syncManagedClusterLabelsBundles(ctx, transportObj, datatypes.ManagedClustersLabelsMsgKey, specDB,
+				managedClusterLabelsDBTableName, &time.Time{})
 		},
 	}); err != nil {
 		return fmt.Errorf("failed to add managed-cluster labels db to transport syncer - %w", err)
