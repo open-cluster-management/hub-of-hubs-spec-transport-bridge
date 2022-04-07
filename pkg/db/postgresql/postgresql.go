@@ -256,7 +256,7 @@ func (p *PostgreSQL) GetEntriesWithoutLeafHubName(ctx context.Context,
 func (p *PostgreSQL) UpdateLeafHubName(ctx context.Context, tableName string, readVersion int64,
 	managedClusterName string, leafHubName string) error {
 	if commandTag, err := p.conn.Exec(ctx, fmt.Sprintf(`UPDATE spec.%s SET updated_at=now(),leaf_hub_name=$1,version=$2 
-				WHERE managed_cluster_name=$3 AND version=$4`, tableName), leafHubName, readVersion+1,
+		WHERE managed_cluster_name=$3 AND version=$4`, tableName), leafHubName, readVersion+1,
 		managedClusterName, readVersion); err != nil {
 		return fmt.Errorf("failed to update managed cluster labels row in spec.%s - %w", tableName, err)
 	} else if commandTag.RowsAffected() == 0 {
@@ -272,7 +272,7 @@ func (p *PostgreSQL) GetManagedClusterLabelsStatus(ctx context.Context, tableNam
 	labels := make(map[string]string)
 
 	if err := p.conn.QueryRow(ctx, fmt.Sprintf(`SELECT payload->'metadata'->'labels' FROM status.%s WHERE 
-leaf_hub_name=$1 AND payload->'metadata'->>'name'=$2`, tableName), leafHubName,
+		leaf_hub_name=$1 AND payload->'metadata'->>'name'=$2`, tableName), leafHubName,
 		managedClusterName).Scan(&labels); err != nil {
 		return nil, fmt.Errorf("error reading from table status.%s - %w", tableName, err)
 	}
