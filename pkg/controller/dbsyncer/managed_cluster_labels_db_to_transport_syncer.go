@@ -54,16 +54,16 @@ func syncManagedClusterLabelsBundles(ctx context.Context, transportObj transport
 		return false, fmt.Errorf("unable to sync bundle - %w", err)
 	}
 
-	// updating value to retain same ptr between calls
-	*lastSyncTimestampPtr = *lastUpdateTimestamp
-
 	// sync bundle per leaf hub
 	for leafHubName, managedClusterLabelsBundle := range leafHubToLabelsSpecBundleMap {
-		if err := syncToTransport(transportObj, leafHubName, transportBundleKey, datatypes.SpecBundle,
-			lastUpdateTimestamp, managedClusterLabelsBundle); err != nil {
+		if err := syncToTransport(transportObj, leafHubName, transportBundleKey, lastUpdateTimestamp,
+			managedClusterLabelsBundle); err != nil {
 			return false, fmt.Errorf("unable to sync bundle to transport - %w", err)
 		}
 	}
+
+	// updating value to retain same ptr between calls
+	*lastSyncTimestampPtr = *lastUpdateTimestamp
 
 	return true, nil
 }

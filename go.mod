@@ -7,6 +7,7 @@ require (
 	github.com/confluentinc/confluent-kafka-go v1.7.0
 	github.com/go-logr/logr v0.4.0
 	github.com/jackc/pgx/v4 v4.11.0
+	github.com/open-cluster-management/api v0.0.0-20210527013639-a6845f2ebcb1
 	github.com/open-cluster-management/governance-policy-propagator v0.0.0-20211209195740-297c4b4e4fbc
 	github.com/open-cluster-management/multicloud-operators-placementrule v1.2.4-0-20211122-be034
 	github.com/open-horizon/edge-sync-service-client v0.0.0-20190711093406-dc3a19905da2
@@ -18,6 +19,7 @@ require (
 	github.com/stolostron/hub-of-hubs-message-compression v0.3.1
 	k8s.io/apimachinery v0.21.3
 	k8s.io/client-go v12.0.0+incompatible
+	open-cluster-management.io/api v0.6.0
 	open-cluster-management.io/multicloud-operators-channel v0.6.0
 	open-cluster-management.io/multicloud-operators-subscription v0.6.0
 	sigs.k8s.io/application v0.8.3
