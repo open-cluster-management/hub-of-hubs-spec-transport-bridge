@@ -46,14 +46,14 @@ func (p *PostgreSQL) Stop() {
 
 // GetLastUpdateTimestamp returns the last update timestamp of a specific table.
 func (p *PostgreSQL) GetLastUpdateTimestamp(ctx context.Context, tableName string,
-	tableHasResources bool) (*time.Time, error) {
+	filterLocalResources bool) (*time.Time, error) {
 	var lastTimestamp time.Time
 
 	query := fmt.Sprintf(`SELECT MAX(updated_at) FROM spec.%s WHERE
 		payload->'metadata'->'annotations'->'hub-of-hubs.open-cluster-management.io/local-resource' IS NULL`,
 		tableName)
 
-	if !tableHasResources {
+	if !filterLocalResources {
 		query = fmt.Sprintf(`SELECT MAX(updated_at) FROM spec.%s`, tableName)
 	}
 

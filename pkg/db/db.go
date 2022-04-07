@@ -11,7 +11,7 @@ import (
 // SpecDB is the needed interface for the db transport bridge.
 type SpecDB interface {
 	// GetLastUpdateTimestamp returns the last update timestamp of a specific table.
-	GetLastUpdateTimestamp(ctx context.Context, tableName string, tableHasResources bool) (*time.Time, error)
+	GetLastUpdateTimestamp(ctx context.Context, tableName string, filterLocalResources bool) (*time.Time, error)
 	// Stop stops db and releases resources (e.g. connection pool).
 	Stop()
 
