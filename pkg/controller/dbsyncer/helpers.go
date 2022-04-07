@@ -37,26 +37,26 @@ func syncObjectsBundle(ctx context.Context, transportObj transport.Transport, tr
 		return false, fmt.Errorf("unable to sync bundle - %w", err)
 	}
 
-	// updating value to retain same ptr between calls
-	*lastSyncTimestampPtr = *lastUpdateTimestamp
-
-	if err := syncToTransport(transportObj, transport.Broadcast, transportBundleKey, datatypes.SpecBundle,
-		lastUpdateTimestamp, bundleResult); err != nil {
+	if err := syncToTransport(transportObj, transport.Broadcast, transportBundleKey, lastUpdateTimestamp,
+		bundleResult); err != nil {
 		return false, fmt.Errorf("unable to sync bundle to transport - %w", err)
 	}
+
+	// updating value to retain same ptr between calls
+	*lastSyncTimestampPtr = *lastUpdateTimestamp
 
 	return true, nil
 }
 
 // syncToTransport syncs an objects bundle to transport.
 func syncToTransport(transportObj transport.Transport, destination string, objID string,
-	objType string, timestamp *time.Time, payload interface{}) error {
+	timestamp *time.Time, payload interface{}) error {
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
 		return fmt.Errorf("failed to sync {objID: %s, destination: %s} to transport - %w", objID, destination, err)
 	}
 
-	transportObj.SendAsync(destination, objID, objType, timestamp.Format(timeFormat), payloadBytes)
+	transportObj.SendAsync(destination, objID, datatypes.SpecBundle, timestamp.Format(timeFormat), payloadBytes)
 
 	return nil
 }
