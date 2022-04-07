@@ -98,10 +98,10 @@ func (s *SyncService) Stop() {
 // SendAsync sends a message to the sync service asynchronously.
 func (s *SyncService) SendAsync(destinationHubName string, id string, msgType string, version string, payload []byte) {
 	message := &transport.Message{
+		Destination: destinationHubName,
 		ID:          id,
 		MsgType:     msgType,
 		Version:     version,
-		Destination: destinationHubName,
 		Payload:     payload,
 	}
 	s.msgChan <- message
