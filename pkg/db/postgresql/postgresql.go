@@ -162,7 +162,7 @@ func (p *PostgreSQL) GetUpdatedManagedClusterLabelsBundles(ctx context.Context, 
 	// select ManagedClusterLabelsSpec entries information from DB
 	rows, err := p.conn.Query(ctx, fmt.Sprintf(`SELECT leaf_hub_name,managed_cluster_name,labels,
 		deleted_label_keys,updated_at,version FROM spec.%[1]s WHERE leaf_hub_name IN (SELECT DISTINCT(leaf_hub_name) 
-		from spec.%[1]s WHERE updated_at::timestamp > timestamp '%[2]s') AND leaf_hub_name != ""`, tableName,
+		from spec.%[1]s WHERE updated_at::timestamp > timestamp '%[2]s') AND leaf_hub_name <> ''`, tableName,
 		timestamp.Format(time.RFC3339Nano)))
 	if err != nil {
 		return nil, fmt.Errorf("failed to query table spec.%s - %w", tableName, err)
@@ -208,7 +208,7 @@ func (p *PostgreSQL) GetUpdatedManagedClusterLabelsBundles(ctx context.Context, 
 func (p *PostgreSQL) GetEntriesWithDeletedLabels(ctx context.Context,
 	tableName string) (map[string]*spec.ManagedClusterLabelsSpecBundle, error) {
 	rows, err := p.conn.Query(ctx, fmt.Sprintf(`SELECT leaf_hub_name,managed_cluster_name,deleted_label_keys,version 
-		FROM spec.%s WHERE deleted_label_keys != '[]' AND leaf_hub_name != ''`, tableName))
+		FROM spec.%s WHERE deleted_label_keys != '[]' AND leaf_hub_name <> ''`, tableName))
 	if err != nil {
 		return nil, fmt.Errorf("failed to query table spec.%s - %w", tableName, err)
 	}

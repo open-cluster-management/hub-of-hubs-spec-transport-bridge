@@ -3,11 +3,10 @@ package dbsyncer
 import (
 	"context"
 	"fmt"
-	"github.com/stolostron/hub-of-hubs-data-types/bundle/spec"
-	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/controller/managed-cluster-sets-tracker"
 	"time"
 
 	datatypes "github.com/stolostron/hub-of-hubs-data-types"
+	"github.com/stolostron/hub-of-hubs-data-types/bundle/spec"
 	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/db"
 	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/intervalpolicy"
 	"github.com/stolostron/hub-of-hubs-spec-transport-bridge/pkg/transport"
@@ -54,7 +53,7 @@ func syncManagedClusterLabelsBundles(ctx context.Context, transportObj transport
 	// if we got here, then the last update timestamp from db is after what we have in memory.
 	// this means something has changed in db, syncing to transport.
 	leafHubToLabelsSpecBundleMap,
-		err := specDB.GetUpdatedManagedClusterLabelsBundles(ctx, dbTableName, lastUpdateTimestamp)
+		err := specDB.GetUpdatedManagedClusterLabelsBundles(ctx, dbTableName, lastSyncTimestampPtr)
 	if err != nil {
 		return false, fmt.Errorf("unable to sync bundle - %w", err)
 	}
@@ -69,7 +68,7 @@ func syncManagedClusterLabelsBundles(ctx context.Context, transportObj transport
 
 	// track ManagedClusterSet assignments
 	if err := trackManagedClusterSetAssignments(ctx, specDB, leafHubToLabelsSpecBundleMap); err != nil {
-		return false, fmt.Errorf("unable to track managed cluster set label assignments")
+		return false, fmt.Errorf("unable to track managed cluster set label assignments - %w", err)
 	}
 
 	// updating value to retain same ptr between calls
