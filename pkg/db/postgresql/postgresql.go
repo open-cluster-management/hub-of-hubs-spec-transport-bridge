@@ -54,7 +54,7 @@ func (p *PostgreSQL) GetLastUpdateTimestamp(ctx context.Context, tableName strin
 	var lastTimestamp time.Time
 
 	query := fmt.Sprintf(`SELECT MAX(updated_at) FROM spec.%s WHERE
-		payload->'metadata'->'annotations'->'hub-of-hubs.open-cluster-management.io/local-resource' IS NULL`,
+		payload->'metadata'->'annotations'->'hub-of-hubs.open-cluster-management.io/global-resource' IS NOT NULL`,
 		tableName)
 
 	if !filterLocalResources {
@@ -79,7 +79,7 @@ func (p *PostgreSQL) GetObjectsBundle(ctx context.Context, tableName string, cre
 	}
 
 	rows, err := p.conn.Query(ctx, fmt.Sprintf(`SELECT id,payload,deleted FROM spec.%s WHERE
-		payload->'metadata'->'annotations'->'hub-of-hubs.open-cluster-management.io/local-resource' IS NULL`,
+		payload->'metadata'->'annotations'->'hub-of-hubs.open-cluster-management.io/global-resource' IS NOT NULL`,
 		tableName))
 	if err != nil {
 		return nil, fmt.Errorf("failed to query table spec.%s - %w", tableName, err)
