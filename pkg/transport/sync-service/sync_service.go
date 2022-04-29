@@ -15,10 +15,11 @@ import (
 )
 
 const (
-	envVarSyncServiceProtocol = "SYNC_SERVICE_PROTOCOL"
-	envVarSyncServiceHost     = "SYNC_SERVICE_HOST"
-	envVarSyncServicePort     = "SYNC_SERVICE_PORT"
-	compressionHeader         = "Content-Encoding"
+	envVarSyncServiceProtocol      = "SYNC_SERVICE_PROTOCOL"
+	envVarSyncServiceHost          = "SYNC_SERVICE_HOST"
+	envVarSyncServicePort          = "SYNC_SERVICE_PORT"
+	compressionHeader              = "Content-Encoding"
+	syncServiceDestinationTypeEdge = "edge"
 )
 
 var errEnvVarNotFound = errors.New("not found environment variable")
@@ -118,11 +119,12 @@ func (s *SyncService) distributeMessages() {
 				ObjectType:  msg.MsgType,
 				Version:     msg.Version,
 				Description: fmt.Sprintf("%s:%s", compressionHeader, s.compressor.GetType()),
-				DestID:      msg.Destination, // if broadcast then empty, works as usual.
 			}
 
 			if msg.Destination != transport.Broadcast { // only if specific to a hub, modify obj id
 				objectMetaData.ObjectID = fmt.Sprintf("%s.%s", msg.Destination, msg.ID)
+				objectMetaData.DestID = msg.Destination // if broadcast then empty, works as usual.
+				objectMetaData.DestType = syncServiceDestinationTypeEdge
 			}
 
 			if err := s.client.UpdateObject(&objectMetaData); err != nil {
@@ -146,6 +148,7 @@ func (s *SyncService) distributeMessages() {
 			}
 
 			s.log.Info("Message sent successfully", "MessageId", msg.ID, "MessageType", msg.MsgType,
+				"DestinationID", objectMetaData.DestID, "DestinationType", objectMetaData.DestType,
 				"Version", msg.Version)
 		}
 	}
